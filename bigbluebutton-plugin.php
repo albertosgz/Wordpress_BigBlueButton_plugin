@@ -1769,6 +1769,7 @@ function bigbluebutton_secToDuration($duration) {
 function bigbluebutton_getDatatableJS() {
 
     return  '<link rel="stylesheet" type="text/css" href="'.BIGBLUEBUTTON_DIR.'/DataTables/datatables.min.css"/>
-             <script type="text/javascript" src="'.BIGBLUEBUTTON_DIR.'/DataTables/datatables.min.js"></script>';
+             <script type="text/javascript" src="'.BIGBLUEBUTTON_DIR.'/DataTables/datatables.min.js"></script>
+             <script type="text/javascript" src="'.BIGBLUEBUTTON_DIR.'/js/xml2json.js"></script>';
 
 }
