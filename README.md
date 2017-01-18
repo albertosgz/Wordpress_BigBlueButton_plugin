@@ -53,10 +53,15 @@ After install and activate it, next shorcodes are available. Each shortcode has 
     
   In case the message `Loading...` is always displayed, check if you have enable the [cross domain issue] (https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) in the BBB Server (  )
   
-  To fix, add these lines in `?` file on BBB Server:
+  To fix, add these lines in `/etc/bigbluebutton/nginx/web` file on BBB Server:
     ```
-    ?
+    location /bigbluebutton {
+    ...
+      Access-Control-Allow-Origin: *
+      Access-Control-Allow-Methods: GET
+      Access-Control-Allow-Credentials: 'true'
     ```
+  You can change the * by your wp site for more security.
     
 ### Widget
 It is also available a widget, but there is no way to manage it, for example setting some option.
