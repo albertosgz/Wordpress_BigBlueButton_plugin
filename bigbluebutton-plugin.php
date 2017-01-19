@@ -1294,9 +1294,9 @@ function bigbluebutton_list_active_meetings($args) {
     global $wpdb, $wp_version, $current_site, $current_user;
 
     // check permissions
-    if (!bigbluebutton_can_listActiveMeetings($role))
+    if (!bigbluebutton_can_listActiveMeetings())
     {
-        return $role." users are not allowed to list active meetings";
+        return $current_user." users are not allowed to list active meetings";
     }
 
     //Displays the title of the page
@@ -1682,7 +1682,7 @@ function bigbluebutton_can_manageRecordings($role) {
 
 }
 
-function bigbluebutton_can_listActiveMeetings($role) {
+function bigbluebutton_can_listActiveMeetings() {
     global $current_user, $wp_roles;
     $permissions = get_option('bigbluebutton_permissions');
 
