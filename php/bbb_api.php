@@ -189,7 +189,7 @@ class BigBlueButton {
 	*
 	*@return The url of getMeetings.
 	*/
-	public function getMeetingsURL($URL, $SALT) {
+	public static function getMeetingsURL($URL, $SALT) {
 		$base_url = $URL."api/getMeetings?";
 		$params = 'random='.(rand() * 1000 );
 		return ( $base_url.$params.'&checksum='.sha1("getMeetings".$params.$SALT));
@@ -354,7 +354,7 @@ class BigBlueButton {
 	*	- If failed then returns a boolean of false.
 	*	- If succeeded then returns an xml of all the meetings.
 	*/
-	public function getMeetings( $URL, $SALT ) {
+	public static function getMeetings( $URL, $SALT ) {
 		$xml = bbb_wrap_simplexml_load_file( BigBlueButton::getMeetingsURL( $URL, $SALT ) );
 		if( $xml && $xml->returncode == 'SUCCESS' ) {
 			if( (string)$xml->messageKey )
