@@ -68,3 +68,7 @@ It is also available a widget, but there is no way to manage it, for example set
 
 ## Based upon original bigbluebutton plugin ##
 See original [readme.txt](../master/readme.txt) 
+
+## Requirements
+
+`sudo apt-get install php7.0-xml`
