@@ -72,3 +72,4 @@ See original [readme.txt](../master/readme.txt)
 ## Requirements
 
 `sudo apt-get install php7.0-xml`
+`sudo apt-get install php-curl`
