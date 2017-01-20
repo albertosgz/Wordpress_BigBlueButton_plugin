@@ -31,7 +31,6 @@ Versions:
 
 function bbb_wrap_simplexml_load_file($url){
 	$response = false;
-
 	if (extension_loaded('curl')) {
 		$ch = curl_init() or die ( curl_error() );
 		$timeout = 10;
@@ -41,6 +40,11 @@ function bbb_wrap_simplexml_load_file($url){
 		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout);
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true);
 		$data = curl_exec( $ch );
+                if ($data === false)
+                {
+                    echo ('<strong>'.curl_error($ch).'</strong>');
+                }
+
 		curl_close( $ch );
 
 		if($data)
@@ -192,7 +196,11 @@ class BigBlueButton {
 	public static function getMeetingsURL($URL, $SALT) {
 		$base_url = $URL."api/getMeetings?";
 		$params = 'random='.(rand() * 1000 );
-		return ( $base_url.$params.'&checksum='.sha1("getMeetings".$params.$SALT));
+                $final_url = $base_url.$params.'&checksum='.sha1("getMeetings".$params.$SALT);
+                
+                if (WP_DEBUG)
+                  echo ('[getMeetingsURL] URL: \"'.$final_url.'\"');
+		return ( $final_url );
 	}
 
 	/**
@@ -355,7 +363,10 @@ class BigBlueButton {
 	*	- If succeeded then returns an xml of all the meetings.
 	*/
 	public static function getMeetings( $URL, $SALT ) {
-		$xml = bbb_wrap_simplexml_load_file( BigBlueButton::getMeetingsURL( $URL, $SALT ) );
+                $aux_xml = BigBlueButton::getMeetingsURL( $URL, $SALT );
+                if (WP_DEBUG)
+                  echo ('[getMeetings] url: '.$aux_xml);
+		$xml = bbb_wrap_simplexml_load_file( $aux_xml );
 		if( $xml && $xml->returncode == 'SUCCESS' ) {
 			if( (string)$xml->messageKey )
 				return ( $xml->message->asXML() );
@@ -372,9 +383,12 @@ class BigBlueButton {
 			echo '</meetings>';
 			return (ob_get_clean());
 		}
-		else {
-			return (false);
-		}
+                else if( $xml ) { //If the xml packet returned failure it displays the message to the user
+                        return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
+                }
+                else { //If the server is unreachable, then prompts the user of the necessary action 
+                        return false;
+                }
 	}
 
 	/**
