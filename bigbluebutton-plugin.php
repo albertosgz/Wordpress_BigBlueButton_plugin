@@ -501,9 +501,12 @@ function bigbluebutton_form($args, $bigbluebutton_form_in_widget = false) {
             $duration = 0;
             if( $found->voiceBridge ) {
                 $voiceBridge = $found->voiceBridge;
-            } else {
-                $voicebridge = (isset($args['voicebridge']))? html_entity_decode($args['voicebridge']): 0;
-            }
+            } /*
+               * I don't want to allow to set the voicebridge by shortcode, but by bbb settings page instead
+               *
+            else {
+                $voiceBridge = (isset($args['voicebridge']))? html_entity_decode($args['voicebridge']): 0;
+            }*/
             $logouturl = (is_ssl()? "https://": "http://") . $_SERVER['HTTP_HOST']  . $_SERVER['REQUEST_URI'];
 
             //Metadata for tagging recordings
@@ -520,7 +523,7 @@ function bigbluebutton_form($args, $bigbluebutton_form_in_widget = false) {
             $welcome .= "<br><br>The voiceBridge of this Conference room is <b>".$voiceBridge."</b>.";
 
             //Call for creating meeting on the bigbluebutton server
-            $response = BigBlueButton::createMeetingArray($name, $found->meetingID, $found->meetingName, $welcome, $found->moderatorPW, $found->attendeePW, $salt_val, $url_val, $logouturl, $recorded? 'true':'false', $duration, $voicebridge, $metadata );
+            $response = BigBlueButton::createMeetingArray($name, $found->meetingID, $found->meetingName, $welcome, $found->moderatorPW, $found->attendeePW, $salt_val, $url_val, $logouturl, $recorded? 'true':'false', $duration, $voiceBridge, $metadata );
 
             //Analyzes the bigbluebutton server's response
             if(!$response || $response['returncode'] == 'FAILED' ) {//If the server is unreachable, or an error occured
@@ -1027,7 +1030,6 @@ function bigbluebutton_list_meetings() {
             if($_POST['SubmitList'] == 'Join') {
             	//Extra parameters
             	$duration = 0;
-            	$voicebridge = $found->voiceBridge;
             	$logouturl = (is_ssl()? "https://": "http://") . $_SERVER['HTTP_HOST']  . $_SERVER['REQUEST_URI'];
 
             	//Metadata for tagging recordings
@@ -1049,9 +1051,9 @@ function bigbluebutton_list_meetings() {
                 }
 
                 //Appending the voiceBridge key to the welcome message
-                $welcome .= "<br><br>The voiceBridge of this Conference room is '<b>".$voiceBridge."</b>'.";
+                $welcome .= "<br><br>The voiceBridge of this Conference room is '<b>".$found->voiceBridge."</b>'.";
 
-            	$response = BigBlueButton::createMeetingArray($current_user->display_name, $found->meetingID, $found->meetingName, $welcome, $found->moderatorPW, $found->attendeePW, $salt_val, $url_val, $logouturl, ($found->recorded? 'true':'false'), $duration, $found->voicebridge, $metadata );
+            	$response = BigBlueButton::createMeetingArray($current_user->display_name, $found->meetingID, $found->meetingName, $welcome, $found->moderatorPW, $found->attendeePW, $salt_val, $url_val, $logouturl, ($found->recorded? 'true':'false'), $duration, $found->voiceBridge, $metadata );
 
             	$createNew = false;
             	//Analyzes the bigbluebutton server's response
