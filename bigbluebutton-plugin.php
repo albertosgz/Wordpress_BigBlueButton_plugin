@@ -1655,7 +1655,7 @@ function bigbluebutton_list_recordings($title=null,$args) {
             leftColumns: 2
         },
         responsive: true,
-        rowReorder: true,
+        rowReorder: false,
         "scrollX": true,
         "lengthMenu": [ 10, 25, 50, 100 ]
       });
