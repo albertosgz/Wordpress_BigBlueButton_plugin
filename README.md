@@ -3,7 +3,7 @@ BigBlueButton plugin for Wordpress. Based on [bigbluebutton plugin on wodpress s
 
 ## Usage
 
-### Shortcodesggggg
+### Shortcodes
 After install and activate it, next shorcodes are available. Each shortcode has possible options, explained below too.
 
 - `bigbluebutton`
