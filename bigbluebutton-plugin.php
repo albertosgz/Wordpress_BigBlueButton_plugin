@@ -1381,8 +1381,12 @@ function bigbluebutton_list_active_meetings($args) {
                     "dataType": "xml",
                     "url": "'.BigBlueButton::getMeetingsURL( $url_val, $salt_val ).'",
                     "dataSrc": function (xml) {
-                        var j = xmlToJson(xml);
-                        return j["response"]["meetings"];
+                        var x2js = new X2JS();
+                        var j = x2js.xml2json(xml);
+                        var array = $.map(j["response"]["meetings"], function (value,index) {
+                            return value;
+                        });
+                        return array;
                     },
                     "cache": "false"
                 },
@@ -1772,6 +1776,6 @@ function bigbluebutton_getDatatableJS() {
 
     return  '<link rel="stylesheet" type="text/css" href="'.BIGBLUEBUTTON_DIR.'/DataTables/datatables.min.css"/>
              <script type="text/javascript" src="'.BIGBLUEBUTTON_DIR.'/DataTables/datatables.min.js"></script>
-             <script type="text/javascript" src="'.BIGBLUEBUTTON_DIR.'/js/xml2json.js"></script>';
+             <script type="text/javascript" src="'.BIGBLUEBUTTON_DIR.'/js/xml2json.min.js"></script>';
 
 }
