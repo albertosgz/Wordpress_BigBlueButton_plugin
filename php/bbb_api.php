@@ -222,7 +222,12 @@ class BigBlueButton {
 
 	public function getRecordingsURL($meetingID, $URL, $SALT ) {
 	    $base_url_record = $URL."api/getRecordings?";
-	    $params = "meetingID=".urlencode($meetingID)."&state=any";
+		$params = '';
+		if (empty($params))
+		{
+			$params .= "meetingID=".urlencode($meetingID)."&";
+		}
+	    $params .= "state=processing,processed,published,unpublished";
 
 	    return ($base_url_record.$params."&checksum=".sha1("getRecordings".$params.$SALT) );
 	}
@@ -447,7 +452,7 @@ class BigBlueButton {
                     $metadataArray['meta_'.$key] = $value;
                 }
 
-                $recordings[] = array( 'recordID' => (string) $recording->recordID, 'meetingID' => (string) $recording->meetingID, 'meetingName' => (string) $recording->name, 'published' => (string) $recording->published, 'startTime' => (string) $recording->startTime, 'endTime' => (string) $recording->endTime, 'playbacks' => $playbackArray ) + $metadataArray;
+                $recordings[] = array( 'recordID' => (string) $recording->recordID, 'meetingID' => (string) $recording->meetingID, 'state' => (string) $recording->state, 'meetingName' => (string) $recording->name, 'published' => (string) $recording->published, 'startTime' => (string) $recording->startTime, 'endTime' => (string) $recording->endTime, 'playbacks' => $playbackArray ) + $metadataArray;
 
             }
 

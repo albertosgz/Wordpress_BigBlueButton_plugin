@@ -1451,42 +1451,43 @@ function bigbluebutton_list_recordings($title=null,$args) {
 
     // filtering by meetingID/s
     $meetingids_condition = '';
+	$meetingIDs = '';
+	if (isset($token) and trim($token) != '') {
+        $tokens = $token;
+    }
     if (isset($tokens) and trim($tokens) != '') {
-        $tokens_array = explode(',', $tokens);
-        foreach ($tokens_array as $tokens_element) {
-            if ($meetingids_condition == "") {
-                $meetingids_condition = "AND (meetingID='".$tokens_element."'";
-            }
-            else {
-                $meetingids_condition .= " OR meetingID='".$tokens_element."'";
-            }
-        }
-        $meetingids_condition .= ')';
-    }
-    elseif (isset($token) and trim($token) != '') {
-        $meetingids_condition = "AND meetingID = '".$token."'";
+		if ($tokens != 'only-current-wp')
+		{
+			$tokens_array = explode(',', $tokens);
+			foreach ($tokens_array as $tokens_element) {
+				if ($meetingids_condition == "") {
+					$meetingids_condition = "AND (meetingID='".$tokens_element."'";
+				}
+				else {
+					$meetingids_condition .= " OR meetingID='".$tokens_element."'";
+				}
+			}
+			$meetingids_condition .= ')';			
+		}
+		
+	    //Gets all the meetings from wordpress database
+		$sql_query = "SELECT DISTINCT meetingID FROM ".$table_logs_name." WHERE recorded = 1 ".$meetingids_condition." ORDER BY timestamp;";
+		$listOfMeetings = $wpdb->get_results($sql_query);
+
+		$listOfRecordings = Array();
+		if($listOfMeetings) {
+			foreach ($listOfMeetings as $meeting) {
+				if( $meetingIDs != '' ) $meetingIDs .= ',';
+				$meetingIDs .= $meeting->meetingID;
+			}
+		}
     }
 
-    //Gets all the meetings from wordpress database
-    $sql_query = "SELECT DISTINCT meetingID FROM ".$table_logs_name." WHERE recorded = 1 ".$meetingids_condition." ORDER BY timestamp;";
-    $listOfMeetings = $wpdb->get_results($sql_query);
-
-    $meetingIDs = '';
     $listOfRecordings = Array();
-    if($listOfMeetings) {
-        foreach ($listOfMeetings as $meeting) {
-            if( $meetingIDs != '' ) $meetingIDs .= ',';
-            $meetingIDs .= $meeting->meetingID;
-        }
-    }
-
-    $listOfRecordings = Array();
-    if( $meetingIDs != '' ) {
-        $recordingsArray = BigBlueButton::getRecordingsArray($meetingIDs, $url_val, $salt_val);
-        if( $recordingsArray['returncode'] == 'SUCCESS' && !$recordingsArray['messageKey'] ) {
-            $listOfRecordings = $recordingsArray['recordings'];
-        }
-    }
+	$recordingsArray = BigBlueButton::getRecordingsArray($meetingIDs, $url_val, $salt_val);
+	if( $recordingsArray['returncode'] == 'SUCCESS' && !$recordingsArray['messageKey'] ) {
+		$listOfRecordings = $recordingsArray['recordings'];
+	}
 
     //Checks to see if there are no meetings in the wordpress db and if so alerts the user
     if(count($listOfRecordings) == 0) {
@@ -1552,7 +1553,8 @@ function bigbluebutton_list_recordings($title=null,$args) {
         <th class="hed">Recording</td>
         <th class="hed">Meeting Room Name</td>
         <th class="hed">Date</td>
-        <th class="hed">Duration</td>';
+        <th class="hed">Duration</td>
+		<th class="hed">State</td>';
     if ( bigbluebutton_can_manageRecordings($role) ) {
         $out .= '
         <th class="hedextra">Toolbar</td>';
@@ -1599,7 +1601,8 @@ function bigbluebutton_list_recordings($title=null,$args) {
               <td>'.$type.'</td>
               <td>'.$recording['meetingName'].'</td>
               <td>'.$formatedStartDate.'</td>
-              <td>'.$duration.' min</td>';
+              <td>'.$duration.' min</td>
+			  <td>'.$recording['state'].'</td>';
 
             /// Prepare actionbar if role is allowed to manage the recordings
             if ( bigbluebutton_can_manageRecordings($role) ) {
