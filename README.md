@@ -79,13 +79,27 @@ After install and activate it, next shorcodes are available. Each shortcode has 
     
   In case the message `Loading...` is always displayed, check if you have enable the [cross domain issue] (https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) in the BBB Server (  )
   
-  To fix, add these lines in `/etc/bigbluebutton/nginx/web` file on BBB Server:
+  To fix, add these lines in `/etc/bigbluebutton/nginx/web` file on BBB Server, wherever inside the block:
     ```
     location /bigbluebutton {
-    ...
+      ...
+      add_header 'Access-Control-Allow-Origin' '*';
+      add_header 'Access-Control-Allow-Methods' 'GET';
+      add_header 'Access-Control-Allow-Credentials' 'true';
+      ...
+    }
+    ```
+  This configuration worked on Nginx version 1.10.0 over Ubuntu 16.04.
+    
+  In old Nginx servers the configuration is detailed below:
+    ```
+    location /bigbluebutton {
+      ...
       Access-Control-Allow-Origin: *
       Access-Control-Allow-Methods: GET
       Access-Control-Allow-Credentials: 'true'
+      ...
+    }
     ```
   You can change the * by your wp site for more security.
     
