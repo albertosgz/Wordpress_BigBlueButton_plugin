@@ -1,12 +1,13 @@
 <?php
 /*
-Plugin Name: BigBlueButton
-Plugin URI: http://blindsidenetworks.com/integrations/wordpress
-Description: BigBlueButton is an open source web conferencing system. This plugin integrates BigBlueButton into WordPress allowing bloggers to create and manage meeting rooms to interact with their readers. It was developed and is maintained by <a href="http://blindsidenetworks.com/" target="_blank">Blindside Networks</a>. For more information on setting up your own BigBlueButton server or for using an external hosting provider visit <a href= "http://bigbluebutton.org/support" target="_blank">BigBlueButton support</a>.
+Plugin Name: BigBlueButton Administration Panel
+Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
+Description: BigBlueButton is an open source web conferencing system. This plugin integrates BigBlueButton into WordPress allowing bloggers to create and manage meeting rooms to interact with their readers. It was developed and is maintained by <a href="https://github.com/albertosgz/Wordpress_BigBlueButton_plugin" target="_blank">albertosgz's bigbluebutton plugin</a>. For more information on setting up your own BigBlueButton server or for using an external hosting provider visit <a href= "http://bigbluebutton.org/support" target="_blank">BigBlueButton support</a><br>
+This plugin is a fork based on <a href="https://wordpress.org/plugins/bigbluebutton/" target="_blank">Wordpress BigBlueButton plugin</a>.
 
-Version: 1.4.2
-Author: Blindside Networks
-Author URI: http://blindsidenetworks.com/
+Version: 1.0.0
+Author: Alberto Sanchez Gonzalez
+Author URI: https://github.com/albertosgz
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
@@ -23,7 +24,7 @@ if(version_compare($wp_version, "2.5", "<")) {
 }
 
 //constant definition
-define("BIGBLUEBUTTON_DIR", WP_PLUGIN_URL . '/bigbluebutton/' );
+define("BIGBLUEBUTTON_DIR", WP_PLUGIN_URL . '/Wordpress_BigBlueButton_plugin/' );
 define('BIGBLUEBUTTON_PLUGIN_VERSION', bigbluebutton_get_version());
 define('BIGBLUEBUTTON_PLUGIN_URL', plugin_dir_url( __FILE__ ));
 
@@ -104,7 +105,7 @@ function bigbluebutton_init_scripts() {
 
 //Registers the plugin's stylesheet
 function bigbluebutton_init_styles() {
-    wp_register_style('bigbluebuttonStylesheet', WP_PLUGIN_URL.'/bigbluebutton/css/bigbluebutton_stylesheet.css');
+    wp_register_style('bigbluebuttonStylesheet', BIGBLUEBUTTON_DIR . '/css/bigbluebutton_stylesheet.css');
 }
 
 //Registers the plugin's stylesheet
@@ -675,7 +676,7 @@ function bigbluebutton_display_redirect_script($bigbluebutton_joinURL, $meetingI
     <script type="text/javascript">
         function bigbluebutton_ping() {
             jQuery.ajax({
-                url : "'.site_url('/wp-content/plugins/bigbluebutton/php/broker.php?action=ping&meetingID='.urlencode($meetingID)).'",
+                url : "' . BIGBLUEBUTTON_DIR. '/php/broker.php?action=ping&meetingID=' . urlencode($meetingID) . '",
                 async : true,
                 dataType : "xml",
                 success : function(xmlDoc) {
@@ -1378,16 +1379,8 @@ function bigbluebutton_list_active_meetings($args) {
                 "lengthMenu": [ 10, 25, 50, 100 ],
                 "deferRender": true,
                 "ajax": {
-                    "dataType": "xml",
-                    "url": "'.BigBlueButton::getMeetingsURL( $url_val, $salt_val ).'",
-                    "dataSrc": function (xml) {
-                        var x2js = new X2JS();
-                        var j = x2js.xml2json(xml);
-                        var array = $.map(j["response"]["meetings"], function (value,index) {
-                            return value;
-                        });
-                        return array;
-                    },
+                    "dataType": "json",
+                    "url": "'. BIGBLUEBUTTON_DIR . '/php/broker.php?action=active_meetings",
                     "cache": "false"
                 },
                 "columns": [
@@ -1467,9 +1460,9 @@ function bigbluebutton_list_recordings($title=null,$args) {
 					$meetingids_condition .= " OR meetingID='".$tokens_element."'";
 				}
 			}
-			$meetingids_condition .= ')';			
+			$meetingids_condition .= ')';
 		}
-		
+
 	    //Gets all the meetings from wordpress database
 		$sql_query = "SELECT DISTINCT meetingID FROM ".$table_logs_name." WHERE recorded = 1 ".$meetingids_condition." ORDER BY timestamp;";
 		$listOfMeetings = $wpdb->get_results($sql_query);
@@ -1504,7 +1497,6 @@ function bigbluebutton_list_recordings($title=null,$args) {
     if ( bigbluebutton_can_manageRecordings($role) ) {
         $out .= '
         <script type="text/javascript">
-            wwwroot = \''.get_bloginfo('url').'\'
             function actionCall(action, recordingid) {
 
                 action = (typeof action == \'undefined\') ? \'publish\' : action;
@@ -1517,18 +1509,18 @@ function bigbluebutton_list_recordings($title=null,$args) {
                             if (el_a.title == \'Hide\' ) {
                                 action = \'unpublish\';
                                 el_a.title = \'Show\';
-                                el_img.src = wwwroot + \'/wp-content/plugins/bigbluebutton/images/show.gif\';
+                                el_img.src = \'' . BIGBLUEBUTTON_DIR . '/images/show.gif\';
                             } else {
                                 action = \'publish\';
                                 el_a.title = \'Hide\';
-                                el_img.src = wwwroot + \'/wp-content/plugins/bigbluebutton/images/hide.gif\';
+                                el_img.src = \'' . BIGBLUEBUTTON_DIR . '/images/hide.gif\';
                             }
                         }
                     } else {
                         // Removes the line from the table
                         jQuery(document.getElementById(\'actionbar-tr-\'+ recordingid)).remove();
                     }
-                    actionurl = wwwroot + "/wp-content/plugins/bigbluebutton/php/broker.php?action=" + action + "&recordingID=" + recordingid;
+                    actionurl = "' . BIGBLUEBUTTON_DIR . '/php/broker.php?action=" + action + "&recordingID=" + recordingid;
                     jQuery.ajax({
                             url : actionurl,
                             async : false,
