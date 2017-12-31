@@ -1292,8 +1292,53 @@ function bigbluebutton_print_table_header() {
 //================================================================================
 //---------------------------------List Active Meetings----------------------------------
 //================================================================================
+
+add_action( 'wp_ajax_bbbadmin_action_get_active_meetings', 'bbbadmin_action_get_active_meetings' );
+
+function bbbadmin_action_get_active_meetings() {
+	global $wpdb; // this is how you get access to the database
+
+    $url_val = get_option('bigbluebutton_url');
+    $salt_val = get_option('bigbluebutton_salt');
+// echo $url_val;
+// echo $salt_val;
+    $info = BigBlueButton::getMeetings( $url_val, $salt_val);
+    $meetings = simplexml_load_string ($info);
+// var_dump($meetings);
+    echo json_encode($meetings);
+
+	// if (extension_loaded('curl')) {
+    //     $response = false;
+	// 	$ch = curl_init() or die ( curl_error() );
+	// 	$timeout = 10;
+	// 	curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false);
+	// 	curl_setopt( $ch, CURLOPT_URL, $url );
+	// 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+	// 	curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+	// 	curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true);
+	// 	$data = curl_exec( $ch );
+    //             if ($data === false)
+    //             {
+    //                 echo ('<strong>'.curl_error($ch).'</strong>');
+    //             }
+    //
+	// 	curl_close( $ch );
+    //
+	// 	if($data)
+	// 	{
+	// 		$response = new SimpleXMLElement($data);
+	// 	}
+    //
+	// } else {
+	//     echo [];
+	// }
+
+	wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 // Displays all the meetings running in the bigbluebutton server
 function bigbluebutton_list_active_meetings($args) {
+
     global $wpdb, $wp_version, $current_site, $current_user;
 
     // check permissions
@@ -1380,8 +1425,14 @@ function bigbluebutton_list_active_meetings($args) {
                 "deferRender": true,
                 "ajax": {
                     "dataType": "json",
-                    "url": "'. BIGBLUEBUTTON_DIR . '/php/broker.php?action=active_meetings",
-                    "cache": "false"
+                    "url": "admin-ajax.php",
+                    "cache": "false",
+                    "dataSrc": "meeting",
+                    "data": function ( d ) {
+                        return $.extend( {}, d, {
+                            "action": "bbbadmin_action_get_active_meetings"
+                        } );
+                    }
                 },
                 "columns": [
                     { "data": "meetingID" },
