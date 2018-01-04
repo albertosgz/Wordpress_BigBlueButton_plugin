@@ -738,6 +738,8 @@ function bigbluebutton_general_options() {
 
         echo bigbluebutton_create_meetings();
 
+        echo bigbluebutton_upload_rooms();
+
         echo bigbluebutton_list_meetings();
 
         echo bigbluebutton_list_recordings('List of Recordings', null);
@@ -997,6 +999,204 @@ function bigbluebutton_create_meetings() {
 
     return $out;
 
+}
+
+
+function bigbluebutton_upload_rooms() {
+    global $wpdb;
+
+    // FROM:
+    // https://wordpress.stackexchange.com/questions/4307/how-can-i-add-an-image-upload-field-directly-to-a-custom-write-panel/4413#4413
+
+    //Initializes the variable that will collect the output
+    $out = '';
+
+    //Displays the title of the page
+    $out .= "<h2>Upload rooms backup</h2>";
+    $out .= "<p>Hint: The expected file is the output of the CSV file generated exporting the next List of Meeting Rooms table</p>";
+
+//////////////////////////////
+    if(isset($_POST['xxxx_manual_save_flag'])) {
+        echo 'DID IT!!!!!!!';
+// var_dump($_FILES);
+// var_dump(isset($_FILES['xxxx_image']));
+                // HANDLE THE FILE UPLOAD
+                $upload_feedback = false;
+
+                // If the upload field has a file in it
+                if(isset($_FILES['xxxx_image']) && ($_FILES['xxxx_image']['size'] > 0)) {
+                    // Get the type of the uploaded file. This is returned as "type/extension"
+                    $arr_file_type = wp_check_filetype(basename($_FILES['xxxx_image']['name']));
+                    $uploaded_file_type = $arr_file_type['type'];
+
+                    // Set an array containing a list of acceptable formats
+                    $allowed_file_types = array('text/csv');
+
+                    // If the uploaded file is the right format
+                    if(in_array($uploaded_file_type, $allowed_file_types)) {
+
+                        // Options array for the wp_handle_upload function. 'test_upload' => false
+                        $upload_overrides = array( 'test_form' => false );
+
+                        // Handle the upload using WP's wp_handle_upload function. Takes the posted file and an options array
+                        $uploaded_file = wp_handle_upload($_FILES['xxxx_image'], $upload_overrides);
+
+
+                        // If the wp_handle_upload call returned a local path for the image
+                        if(isset($uploaded_file['file'])) {
+
+                            var_dump($uploaded_file['file']);
+
+                            // The wp_insert_attachment function needs the literal system path, which was passed back from wp_handle_upload
+                            $file_name_and_location = $uploaded_file['file'];
+
+                            $overwrite_rooms = (isset($_POST[ 'overwrite_rooms' ]) && $_POST[ 'overwrite_rooms' ] == 'True')? true: false;
+
+                            $row = 1;
+                            $inserted = 0;
+                            $repeated = 0;
+                            $headers = [
+                                'Meeting Room Name',
+                                'Meeting Token',
+                                'Attendee Password',
+                                'Moderator Password',
+                                'Wait for Moderator',
+                                'Recorded',
+                                'VoiceBridge',
+                                'Welcome Message',
+                            ];
+                            $table_name = $wpdb->prefix . "bigbluebutton";
+                            $listOfMeetings = [];
+                            foreach($wpdb->get_results("SELECT meetingID FROM ".$table_name) as $value) {
+                                $listOfMeetings [] = $value->meetingID;
+                            }
+
+                            if (($gestor = fopen($file_name_and_location, "r")) !== FALSE) {
+                                while (($data = fgetcsv($gestor)) !== FALSE) {
+                                    // $numero = count($data);
+                                    // echo "<p> count($data) de campos en la línea $row: <br /></p>\n";
+                                    if ($row === 1) {
+                                        for ($c=0; $c < count($headers); $c++) {
+                                            if ($data[$c] != $headers[$c]) {
+                                                $upload_feedback = 'first row must be the headers. $c='.$c.'. "'.$data[$c].'" != "'.$headers[$c].'". Row:'.print_r($data, true).'. Headers: '.print_r($headers, true);
+                                                break 2;
+                                            }
+                                        }
+                                    } else {
+$out .= in_array($data[1], $listOfMeetings) ? 'exists <br />' : 'no exists <br />';
+$out .= $overwrite_rooms ? 'overwrite <br />' : 'no overwrite <br />';
+$out .= $data[1] . ' <br />';
+$out .= print_r($listOfMeetings, true) . ' <br />';
+                                        $toInsert = true;
+                                        if (in_array($data[1], $listOfMeetings)) {
+                                            $repeated++;
+                                            $toInsert = false;
+                                        }
+                                        if ($toInsert || $overwrite_rooms) {
+
+                                            $inserted += $wpdb->insert( $table_name, array(
+                                                'meetingID' => $data[1],
+                                                'meetingName' => $data[0],
+                                                'meetingVersion' => time(),
+                                                'attendeePW' => $data[2],
+                                                'moderatorPW' => $data[3],
+                                                'waitForModerator' => $data[4],
+                                                'recorded' => $data[5],
+                                                'voiceBridge' => $data[6],
+                                                'welcome' => $data[7],
+                                            ));
+                                        }
+                                    }
+                                    $row++;
+                                }
+                                fclose($gestor);
+                            }
+
+                            // Set the feedback flag to false, since the upload was successful
+                            if (!$upload_feedback) {
+                                $upload_feedback = 'Uploaded ok<br />Readed '.($row-2).'<br />Inserted '.$inserted.'<br />Repeated '.$repeated.' (same token)<br />';
+                            }
+
+                        } else { // wp_handle_upload returned some kind of error. the return does contain error details, so you can use it here if you want.
+
+                            $upload_feedback = 'There was a problem with your upload.';
+                            update_post_meta($post_id,'_xxxx_attached_image',$attach_id);
+
+                        }
+
+                    } else { // wrong file type
+
+                        $upload_feedback = 'Please upload only CSV files (received ' . $uploaded_file_type . ' type).';
+
+                    }
+
+                } else { // No file was passed
+
+                    $upload_feedback = 'No file was passed.';
+                }
+
+        if ($upload_feedback) {
+
+            $out .= '<p><strong>' . $upload_feedback . '</strong></p>';
+            echo $upload_feedback . '<br />';
+
+        }
+
+                // Update the post meta with any feedback
+                // update_post_meta($post_id,'_xxxx_attached_image_upload_feedback',$upload_feedback);
+
+    } // End if manual save flag
+///////////////////////////////
+
+    // See if there's an existing image. (We're associating images with posts by saving the image's 'attachment id' as a post meta value)
+       // Incidentally, this is also how you'd find any uploaded files for display on the frontend.
+
+    //    $existing_image_id = get_post_meta($post->ID,'_xxxx_attached_image', true);
+    //    if(is_numeric($existing_image_id)) {
+       //
+    //        $out .= '<div>';
+    //            $arr_existing_image = wp_get_attachment_image_src($existing_image_id, 'large');
+    //            $existing_image_url = $arr_existing_image[0];
+    //            $out .= '<img src="' . $existing_image_url . '" />';
+    //        $out .= '</div>';
+       //
+    //    }
+       //
+    //    // If there is an existing image, show it
+    //    if($existing_image_id) {
+       //
+    //        $out .= '<div>Attached Image ID: ' . $existing_image_id . '</div>';
+       //
+    //    }
+
+       $out .= '<form name="form_importing_bbb_rooms" enctype="multipart/form-data" method="post" action="">';
+
+       $out .= 'Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" />';
+
+       // See if there's a status message to display (we're using this to show errors during the upload process, though we should probably be using the WP_error class)
+       $status_message = get_post_meta($post->ID,'_xxxx_attached_image_upload_feedback', true);
+
+       // Show an error message if there is one
+       if($status_message) {
+
+           $out .= '<div class="upload_status_message">';
+               $out .= $status_message;
+           $out .= '</div>';
+
+       }
+
+       // Put in a hidden flag. This helps differentiate between manual saves and auto-saves (in auto-saves, the file wouldn't be passed).
+       $out .= '<input type="hidden" name="xxxx_manual_save_flag" value="true" />';
+
+       $out .= '<p>Overwrite rooms which token already exists: <input type="checkbox" name="overwrite_rooms" value="false" /></p>';
+
+    $out .= '<p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Import" /></p>';
+
+    $out .= '</form>';
+
+       $out .= "<hr>";
+
+    return $out;
 }
 
 //================================================================================
@@ -1300,38 +1500,9 @@ function bbbadmin_action_get_active_meetings() {
 
     $url_val = get_option('bigbluebutton_url');
     $salt_val = get_option('bigbluebutton_salt');
-// echo $url_val;
-// echo $salt_val;
     $info = BigBlueButton::getMeetings( $url_val, $salt_val);
     $meetings = simplexml_load_string ($info);
-// var_dump($meetings);
     echo json_encode($meetings);
-
-	// if (extension_loaded('curl')) {
-    //     $response = false;
-	// 	$ch = curl_init() or die ( curl_error() );
-	// 	$timeout = 10;
-	// 	curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false);
-	// 	curl_setopt( $ch, CURLOPT_URL, $url );
-	// 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-	// 	curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-	// 	curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true);
-	// 	$data = curl_exec( $ch );
-    //             if ($data === false)
-    //             {
-    //                 echo ('<strong>'.curl_error($ch).'</strong>');
-    //             }
-    //
-	// 	curl_close( $ch );
-    //
-	// 	if($data)
-	// 	{
-	// 		$response = new SimpleXMLElement($data);
-	// 	}
-    //
-	// } else {
-	//     echo [];
-	// }
 
 	wp_die(); // this is required to terminate immediately and return a proper response
 }
@@ -1382,7 +1553,7 @@ function bigbluebutton_list_active_meetings($args) {
                     <th>ID</th>
                     <th>Name</th>
                     <th>Voice Bridge</th>
-                    <th>Duration</th>
+                    <th>Creation</th>
                     <th>Participants</th>
                 </tr>
             </thead>
@@ -1391,7 +1562,7 @@ function bigbluebutton_list_active_meetings($args) {
                     <th>ID</th>
                     <th>Name</th>
                     <th>Voice Bridge</th>
-                    <th>Duration</th>
+                    <th>Creation</th>
                     <th>Participants</th>
                 </tr>
             </tfoot>
@@ -1411,9 +1582,9 @@ function bigbluebutton_list_active_meetings($args) {
                     {
                         text: "Reload table",
                         action: function () {
-                        table_activity_monitor.ajax.reload();
+                            table_activity_monitor.ajax.reload(null, false);
+                        }
                     }
-                }
                 ],
                 fixedColumns:   {
                     leftColumns: 1
@@ -1438,8 +1609,11 @@ function bigbluebutton_list_active_meetings($args) {
                     { "data": "meetingID" },
                     { "data": "meetingName" },
                     { "data": "voiceBridge" },
-                    { "data": "duration" },
+                    { "data": "createDate" },
                     { "data": "participantCount" }
+                ],
+                "columnDefs": [
+                    { targets: "_all", "defaultContent": "<i>Not set</i>", }
                 ]
           } );
 
