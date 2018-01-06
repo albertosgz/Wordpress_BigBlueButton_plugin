@@ -39,7 +39,7 @@ $meetingID_name = 'meetingID';
 //================================================================================
 //Retrieves the bigbluebutton url, and salt from the seesion
 if ( !isset($_SESSION[$salt_name]) || !isset($_SESSION[$url_name]) ) {
-    header("HTTP/1.0 400 Bad Request. BigBlueButton Url or Salt are not accessible.");
+    header("HTTP/1.0 400 Bad Request. BigBlueButton Url or Salt are not accessible.".($_SESSION));
 
 } else if ( !isset($_GET[$action_name]) ) {
     header("HTTP/1.0 400 Bad Request. [action] parameter was not included in this query.");
@@ -87,18 +87,10 @@ if ( !isset($_SESSION[$salt_name]) || !isset($_SESSION[$url_name]) ) {
                 echo "<response>".$response."</response>";
             }
             break;
-        case "active_meetings":
-            header('Content-Type: text/xml; charset=utf8');
-            $xml_string = BigBlueButton::getMeetingsArray( $url_val, $salt_val );
-            #$xml = simplexml_load_string($xml_string);
-            #echo $xml;
-            echo json_encode(array('data' => $xml_string));
-            break;
 
         default:
             header('Content-Type: text/plain; charset=utf-8');
             echo BigBlueButton::getServerVersion($url_val);
     }
 }
-
 ?>

@@ -1005,8 +1005,7 @@ function bigbluebutton_create_meetings() {
 function bigbluebutton_upload_rooms() {
     global $wpdb;
 
-    // FROM:
-    // https://wordpress.stackexchange.com/questions/4307/how-can-i-add-an-image-upload-field-directly-to-a-custom-write-panel/4413#4413
+    // @note FROM: https://wordpress.stackexchange.com/questions/4307/how-can-i-add-an-image-upload-field-directly-to-a-custom-write-panel/4413#4413
 
     //Initializes the variable that will collect the output
     $out = '';
@@ -1015,11 +1014,8 @@ function bigbluebutton_upload_rooms() {
     $out .= "<h2>Upload rooms backup</h2>";
     $out .= "<p>Hint: The expected file is the output of the CSV file generated exporting the next List of Meeting Rooms table</p>";
 
-//////////////////////////////
     if(isset($_POST['xxxx_manual_save_flag'])) {
-        echo 'DID IT!!!!!!!';
-// var_dump($_FILES);
-// var_dump(isset($_FILES['xxxx_image']));
+
                 // HANDLE THE FILE UPLOAD
                 $upload_feedback = false;
 
@@ -1044,8 +1040,6 @@ function bigbluebutton_upload_rooms() {
 
                         // If the wp_handle_upload call returned a local path for the image
                         if(isset($uploaded_file['file'])) {
-
-                            var_dump($_POST);
 
                             // The wp_insert_attachment function needs the literal system path, which was passed back from wp_handle_upload
                             $file_name_and_location = $uploaded_file['file'];
@@ -1073,8 +1067,7 @@ function bigbluebutton_upload_rooms() {
 
                             if (($gestor = fopen($file_name_and_location, "r")) !== FALSE) {
                                 while (($data = fgetcsv($gestor)) !== FALSE) {
-                                    // $numero = count($data);
-                                    // echo "<p> count($data) de campos en la línea $row: <br /></p>\n";
+
                                     if ($row === 1) {
                                         for ($c=0; $c < count($headers); $c++) {
                                             if ($data[$c] != $headers[$c]) {
@@ -1083,10 +1076,7 @@ function bigbluebutton_upload_rooms() {
                                             }
                                         }
                                     } else {
-$out .= in_array($data[1], $listOfMeetings) ? 'exists <br />' : 'no exists <br />';
-$out .= $overwrite_rooms ? 'overwrite <br />' : 'no overwrite <br />';
-$out .= $data[1] . ' <br />';
-$out .= print_r($listOfMeetings, true) . ' <br />';
+
                                         $toInsert = true;
                                         if (in_array($data[1], $listOfMeetings)) {
                                             $repeated++;
@@ -1138,12 +1128,10 @@ $out .= print_r($listOfMeetings, true) . ' <br />';
         if ($upload_feedback) {
 
             $out .= '<p><strong>' . $upload_feedback . '</strong></p>';
-            echo $upload_feedback . '<br />';
 
         }
 
     } // End if manual save flag
-///////////////////////////////
 
        $out .= '<form name="form_importing_bbb_rooms" enctype="multipart/form-data" method="post" action="">';
        $out .= '<p>Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" /></p>';
