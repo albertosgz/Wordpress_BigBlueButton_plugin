@@ -1045,12 +1045,12 @@ function bigbluebutton_upload_rooms() {
                         // If the wp_handle_upload call returned a local path for the image
                         if(isset($uploaded_file['file'])) {
 
-                            var_dump($uploaded_file['file']);
+                            var_dump($_POST);
 
                             // The wp_insert_attachment function needs the literal system path, which was passed back from wp_handle_upload
                             $file_name_and_location = $uploaded_file['file'];
 
-                            $overwrite_rooms = (isset($_POST[ 'overwrite_rooms' ]) && $_POST[ 'overwrite_rooms' ] == 'True')? true: false;
+                            $overwrite_rooms = (isset($_POST[ 'overwrite_rooms' ]) && ($_POST[ 'overwrite_rooms' ] == 'True' || $_POST[ 'overwrite_rooms' ] == 'true'));
 
                             $row = 1;
                             $inserted = 0;
@@ -1142,57 +1142,16 @@ $out .= print_r($listOfMeetings, true) . ' <br />';
 
         }
 
-                // Update the post meta with any feedback
-                // update_post_meta($post_id,'_xxxx_attached_image_upload_feedback',$upload_feedback);
-
     } // End if manual save flag
 ///////////////////////////////
 
-    // See if there's an existing image. (We're associating images with posts by saving the image's 'attachment id' as a post meta value)
-       // Incidentally, this is also how you'd find any uploaded files for display on the frontend.
-
-    //    $existing_image_id = get_post_meta($post->ID,'_xxxx_attached_image', true);
-    //    if(is_numeric($existing_image_id)) {
-       //
-    //        $out .= '<div>';
-    //            $arr_existing_image = wp_get_attachment_image_src($existing_image_id, 'large');
-    //            $existing_image_url = $arr_existing_image[0];
-    //            $out .= '<img src="' . $existing_image_url . '" />';
-    //        $out .= '</div>';
-       //
-    //    }
-       //
-    //    // If there is an existing image, show it
-    //    if($existing_image_id) {
-       //
-    //        $out .= '<div>Attached Image ID: ' . $existing_image_id . '</div>';
-       //
-    //    }
-
        $out .= '<form name="form_importing_bbb_rooms" enctype="multipart/form-data" method="post" action="">';
-
-       $out .= 'Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" />';
-
-       // See if there's a status message to display (we're using this to show errors during the upload process, though we should probably be using the WP_error class)
-       $status_message = get_post_meta($post->ID,'_xxxx_attached_image_upload_feedback', true);
-
-       // Show an error message if there is one
-       if($status_message) {
-
-           $out .= '<div class="upload_status_message">';
-               $out .= $status_message;
-           $out .= '</div>';
-
-       }
-
+       $out .= '<p>Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" /></p>';
        // Put in a hidden flag. This helps differentiate between manual saves and auto-saves (in auto-saves, the file wouldn't be passed).
        $out .= '<input type="hidden" name="xxxx_manual_save_flag" value="true" />';
-
-       $out .= '<p>Overwrite rooms which token already exists: <input type="checkbox" name="overwrite_rooms" value="false" /></p>';
-
-    $out .= '<p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Import" /></p>';
-
-    $out .= '</form>';
+       $out .= '<p>Overwrite rooms with token repeated: <input type="checkbox" name="overwrite_rooms" value="True" /></p>';
+       $out .= '<p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Import" /></p>';
+       $out .= '</form>';
 
        $out .= "<hr>";
 
