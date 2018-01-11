@@ -31,32 +31,9 @@ Versions:
 */
 
 function bbb_wrap_simplexml_load_file($url){
-	// $response = false;
-	// if (extension_loaded('curl')) {
-	// 	$ch = curl_init() or die ( curl_error() );
-	// 	$timeout = 10;
-	// 	curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false);
-	// 	curl_setopt( $ch, CURLOPT_URL, $url );
-	// 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-	// 	curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-	// 	curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true);
-	// 	$data = curl_exec( $ch );
-    //             if ($data === false)
-    //             {
-    //                 echo ('<strong>'.curl_error($ch).'</strong>');
-    //             }
-    //
-	// 	curl_close( $ch );
-    //
-	// 	if($data)
-	// 	{
-	// 		$response = new SimpleXMLElement($data);
-	// 	}
-	// } else {
-	//     $response = simplexml_load_file($url);
-	// }
-	// return $response;
-	$response = wp_remote_get( 'http://api.github.com/users/blobaugh' );
+
+	$response = wp_remote_get( $url );
+	_log($response);
 	$body = wp_remote_retrieve_body( $response );
 	var_dump($response);
 	var_dump($body);
@@ -346,7 +323,7 @@ class BigBlueButton {
 	*/
 	public static function getMeetingInfoArray( $meetingID, $modPW, $URL, $SALT ) {
 		$xml = bbb_wrap_simplexml_load_file( BigBlueButton::getMeetingInfoURL( $meetingID, $modPW, $URL, $SALT ) );
-
+_log($xml);
         if($xml && $xml->returncode == 'SUCCESS'){ //If there were meetings already created
 			return array( 'returncode' => (string)$xml->returncode, 'meetingID' => (string)$xml->meetingID, 'moderatorPW' => (string)$xml->moderatorPW, 'attendeePW' => (string)$xml->attendeePW, 'hasBeenForciblyEnded' => (string)$xml->hasBeenForciblyEnded, 'running' => (string)$xml->running, 'startTime' => (string)$xml->startTime, 'endTime' => (string)$xml->endTime, 'participantCount' => (string)$xml->participantCount, 'moderatorCount' => (string)$xml->moderatorCount, 'attendees' => (string)$xml->attendees );
 		}
@@ -372,31 +349,29 @@ class BigBlueButton {
 	*/
 	public static function getMeetings( $URL, $SALT ) {
                 $aux_xml = BigBlueButton::getMeetingsURL( $URL, $SALT );
-                if (WP_DEBUG)
-                  echo ('[getMeetings] url: '.$aux_xml);
-		$xml = bbb_wrap_simplexml_load_file( $aux_xml );
-		if( $xml && $xml->returncode == 'SUCCESS' ) {
-			if( (string)$xml->messageKey )
-				return ( $xml->message->asXML() );
-			ob_start();
-			echo '<meetings>';
-			if( count( $xml->meetings ) && count( $xml->meetings->meeting ) ) {
-				foreach ($xml->meetings->meeting as $meeting)
-				{
-					echo '<meeting>';
-					echo BigBlueButton::getMeetingInfo($meeting->meetingID, $meeting->moderatorPW, $URL, $SALT);
-					echo '</meeting>';
-				}
-			}
-			echo '</meetings>';
-			return (ob_get_clean());
-		}
-                else if( $xml ) { //If the xml packet returned failure it displays the message to the user
-                        return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
-                }
-                else { //If the server is unreachable, then prompts the user of the necessary action
-                        return false;
-                }
+		// $xml = bbb_wrap_simplexml_load_file( $aux_xml );
+		// if( $xml && $xml->returncode == 'SUCCESS' ) {
+		// 	if( (string)$xml->messageKey )
+		// 		return ( $xml->message->asXML() );
+		// 	ob_start();
+		// 	echo '<meetings>';
+		// 	if( count( $xml->meetings ) && count( $xml->meetings->meeting ) ) {
+		// 		foreach ($xml->meetings->meeting as $meeting)
+		// 		{
+		// 			echo '<meeting>';
+		// 			echo BigBlueButton::getMeetingInfo($meeting->meetingID, $meeting->moderatorPW, $URL, $SALT);
+		// 			echo '</meeting>';
+		// 		}
+		// 	}
+		// 	echo '</meetings>';
+		// 	return (ob_get_clean());
+		// }
+        //         else if( $xml ) { //If the xml packet returned failure it displays the message to the user
+        //                 return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
+        //         }
+        //         else { //If the server is unreachable, then prompts the user of the necessary action
+        //                 return false;
+        //         }
 	}
 
 	/**

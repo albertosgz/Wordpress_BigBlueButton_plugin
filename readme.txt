@@ -1,7 +1,7 @@
 === BBB Administration Panel ===
 Contributors: albertosgz
 Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
-Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing
+Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
 Tested up to: 4.9.1
 Stable tag: 1.0
