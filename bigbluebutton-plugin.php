@@ -253,62 +253,62 @@ function bbb_admin_panel_update() {
     //
     //     delete_option('mt_waitForModerator'); //deletes this option because it is no longer needed, it has been incorportated into the table.
     //     delete_option('bbb_db_version'); //deletes this option because it is no longer needed, the versioning pattern has changed.
-    }
+    // }
 
     //Set the new permission schema
-    if( $bbb_admin_panel_plugin_version_installed && strcmp($bbb_admin_panel_plugin_version_installed, "1.3.3") < 0 ) {
-        $roles = $wp_roles->role_names;
-        $roles['anonymous'] = 'Anonymous';
-
-        if( !get_option('bbb_admin_panel_permissions') ) {
-            foreach($roles as $key => $value) {
-                $permissions[$key]['participate'] = true;
-                if($value == "Administrator") {
-                    $permissions[$key]['manageRecordings'] = true;
-                    $permissions[$key]['listActiveMeetings'] = true;
-                    $permissions[$key]['defaultRole'] = "moderator";
-                } else if($value == "Anonymous") {
-                    $permissions[$key]['manageRecordings'] = false;
-                    $permissions[$key]['listActiveMeetings'] = false;
-                    $permissions[$key]['defaultRole'] = "none";
-                } else {
-                    $permissions[$key]['manageRecordings'] = false;
-                    $permissions[$key]['listActiveMeetings'] = false;
-                    $permissions[$key]['defaultRole'] = "attendee";
-                }
-            }
-
-        } else {
-            $old_permissions = get_option('bbb_admin_panel_permissions');
-            foreach($roles as $key => $value) {
-                if( !isset($old_permissions[$key]['participate']) ) {
-                    $permissions[$key]['participate'] = true;
-                    if($value == "Administrator") {
-                        $permissions[$key]['manageRecordings'] = true;
-                        $permissions[$key]['listActiveMeetings'] = true;
-                        $permissions[$key]['defaultRole'] = "moderator";
-                    } else if($value == "Anonymous") {
-                        $permissions[$key]['manageRecordings'] = false;
-                        $permissions[$key]['listActiveMeetings'] = false;
-                        $permissions[$key]['defaultRole'] = "none";
-                    } else {
-                        $permissions[$key]['manageRecordings'] = false;
-                        $permissions[$key]['listActiveMeetings'] = false;
-                        $permissions[$key]['defaultRole'] = "attendee";
-                    }
-                } else {
-                    $permissions[$key] = $old_permissions[$key];
-                }
-            }
-
-        }
-
-        update_option( 'bbb_admin_panel_permissions', $permissions );
-
-    }
-
-    ////////////////// Set new bbb_admin_panel_plugin_version value //////////////////
-    update_option( "bbb_admin_panel_plugin_version", BBB_ADMINISTRATION_PANEL_PLUGIN_VERSION );
+    // if( $bbb_admin_panel_plugin_version_installed && strcmp($bbb_admin_panel_plugin_version_installed, "1.3.3") < 0 ) {
+    //     $roles = $wp_roles->role_names;
+    //     $roles['anonymous'] = 'Anonymous';
+    //
+    //     if( !get_option('bbb_admin_panel_permissions') ) {
+    //         foreach($roles as $key => $value) {
+    //             $permissions[$key]['participate'] = true;
+    //             if($value == "Administrator") {
+    //                 $permissions[$key]['manageRecordings'] = true;
+    //                 $permissions[$key]['listActiveMeetings'] = true;
+    //                 $permissions[$key]['defaultRole'] = "moderator";
+    //             } else if($value == "Anonymous") {
+    //                 $permissions[$key]['manageRecordings'] = false;
+    //                 $permissions[$key]['listActiveMeetings'] = false;
+    //                 $permissions[$key]['defaultRole'] = "none";
+    //             } else {
+    //                 $permissions[$key]['manageRecordings'] = false;
+    //                 $permissions[$key]['listActiveMeetings'] = false;
+    //                 $permissions[$key]['defaultRole'] = "attendee";
+    //             }
+    //         }
+    //
+    //     } else {
+    //         $old_permissions = get_option('bbb_admin_panel_permissions');
+    //         foreach($roles as $key => $value) {
+    //             if( !isset($old_permissions[$key]['participate']) ) {
+    //                 $permissions[$key]['participate'] = true;
+    //                 if($value == "Administrator") {
+    //                     $permissions[$key]['manageRecordings'] = true;
+    //                     $permissions[$key]['listActiveMeetings'] = true;
+    //                     $permissions[$key]['defaultRole'] = "moderator";
+    //                 } else if($value == "Anonymous") {
+    //                     $permissions[$key]['manageRecordings'] = false;
+    //                     $permissions[$key]['listActiveMeetings'] = false;
+    //                     $permissions[$key]['defaultRole'] = "none";
+    //                 } else {
+    //                     $permissions[$key]['manageRecordings'] = false;
+    //                     $permissions[$key]['listActiveMeetings'] = false;
+    //                     $permissions[$key]['defaultRole'] = "attendee";
+    //                 }
+    //             } else {
+    //                 $permissions[$key] = $old_permissions[$key];
+    //             }
+    //         }
+    //
+    //     }
+    //
+    //     update_option( 'bbb_admin_panel_permissions', $permissions );
+    //
+    // }
+    //
+    // ////////////////// Set new bbb_admin_panel_plugin_version value //////////////////
+    // update_option( "bbb_admin_panel_plugin_version", BBB_ADMINISTRATION_PANEL_PLUGIN_VERSION );
 
 }
 
