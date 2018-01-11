@@ -26,36 +26,41 @@ Versions:
                     (email : omar DOT shammas [a t ] g m ail DOT com)
    1.3  --  Updated by Jesus Federico
                     (email : jesus [a t ] blind side n e t w o rks DOT com)
+   2.0  -- Updated by Alberto Sanchez - albertosgz
 
 */
 
 function bbb_wrap_simplexml_load_file($url){
-	$response = false;
-	if (extension_loaded('curl')) {
-		$ch = curl_init() or die ( curl_error() );
-		$timeout = 10;
-		curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt( $ch, CURLOPT_URL, $url );
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout);
-		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true);
-		$data = curl_exec( $ch );
-                if ($data === false)
-                {
-                    echo ('<strong>'.curl_error($ch).'</strong>');
-                }
-
-		curl_close( $ch );
-
-		if($data)
-		{
-			$response = new SimpleXMLElement($data);
-		}
-	} else {
-	    $response = simplexml_load_file($url);
-	}
-
-	return $response;
+	// $response = false;
+	// if (extension_loaded('curl')) {
+	// 	$ch = curl_init() or die ( curl_error() );
+	// 	$timeout = 10;
+	// 	curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false);
+	// 	curl_setopt( $ch, CURLOPT_URL, $url );
+	// 	curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+	// 	curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+	// 	curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, true);
+	// 	$data = curl_exec( $ch );
+    //             if ($data === false)
+    //             {
+    //                 echo ('<strong>'.curl_error($ch).'</strong>');
+    //             }
+    //
+	// 	curl_close( $ch );
+    //
+	// 	if($data)
+	// 	{
+	// 		$response = new SimpleXMLElement($data);
+	// 	}
+	// } else {
+	//     $response = simplexml_load_file($url);
+	// }
+	// return $response;
+	$response = wp_remote_get( 'http://api.github.com/users/blobaugh' );
+	$body = wp_remote_retrieve_body( $response );
+	var_dump($response);
+	var_dump($body);
+	return $body;
 }
 
 class BigBlueButton {
