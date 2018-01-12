@@ -30,14 +30,41 @@ Versions:
 
 */
 
-function bbb_wrap_simplexml_load_file($url){
+function bbb_wrap_simplexml_load_file($url) {
 
-	$response = wp_remote_get( $url );
-	_log($response);
-	$body = wp_remote_retrieve_body( $response );
-	var_dump($response);
-	var_dump($body);
-	return $body;
+	// global $wp_version;
+	$args = array(
+	    'timeout'     => 30,
+	    // 'redirection' => 5,
+	    // 'httpversion' => '1.0',
+	    // 'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
+	    // 'blocking'    => true,
+	    // 'headers'     => array(),
+	    // 'cookies'     => array(),
+	    // 'body'        => null,
+	    // 'compress'    => false,
+	    // 'decompress'  => true,
+	    // 'sslverify'   => true,
+	    // 'stream'      => false,
+	    // 'filename'    => null
+	);
+
+	$response = wp_remote_get($url, $args);
+	// var_dump(123);
+	// echo (123);
+	// _log($url);
+	_log(1);
+	if (is_wp_error ($response)) {
+		_log('error response after request to '.$url);
+		_log($response);
+		return false; // Bail early
+	}
+	$body = wp_remote_retrieve_body ($response);
+	// var_dump($response);
+	// var_dump($body);
+	_log(3);
+	// _log(simplexml_load_string($body));
+	return simplexml_load_string($body);
 }
 
 class BigBlueButton {
@@ -348,30 +375,31 @@ _log($xml);
 	*	- If succeeded then returns an xml of all the meetings.
 	*/
 	public static function getMeetings( $URL, $SALT ) {
-                $aux_xml = BigBlueButton::getMeetingsURL( $URL, $SALT );
-		// $xml = bbb_wrap_simplexml_load_file( $aux_xml );
-		// if( $xml && $xml->returncode == 'SUCCESS' ) {
-		// 	if( (string)$xml->messageKey )
-		// 		return ( $xml->message->asXML() );
-		// 	ob_start();
-		// 	echo '<meetings>';
-		// 	if( count( $xml->meetings ) && count( $xml->meetings->meeting ) ) {
-		// 		foreach ($xml->meetings->meeting as $meeting)
-		// 		{
-		// 			echo '<meeting>';
-		// 			echo BigBlueButton::getMeetingInfo($meeting->meetingID, $meeting->moderatorPW, $URL, $SALT);
-		// 			echo '</meeting>';
-		// 		}
-		// 	}
-		// 	echo '</meetings>';
-		// 	return (ob_get_clean());
-		// }
-        //         else if( $xml ) { //If the xml packet returned failure it displays the message to the user
-        //                 return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
-        //         }
-        //         else { //If the server is unreachable, then prompts the user of the necessary action
-        //                 return false;
-        //         }
+        $url_request = BigBlueButton::getMeetingsURL( $URL, $SALT );
+		_log($url_request);
+		$xml = bbb_wrap_simplexml_load_file($url_request);
+		if( $xml && $xml->returncode == 'SUCCESS' ) {
+			if( (string)$xml->messageKey )
+				return ( $xml->message->asXML() );
+			ob_start();
+			echo '<meetings>';
+			if( count( $xml->meetings ) && count( $xml->meetings->meeting ) ) {
+				foreach ($xml->meetings->meeting as $meeting)
+				{
+					echo '<meeting>';
+					echo BigBlueButton::getMeetingInfo($meeting->meetingID, $meeting->moderatorPW, $URL, $SALT);
+					echo '</meeting>';
+				}
+			}
+			echo '</meetings>';
+			return (ob_get_clean());
+		}
+        else if( $xml ) { //If the xml packet returned failure it displays the message to the user
+                return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
+        }
+        else { //If the server is unreachable, then prompts the user of the necessary action
+                return false;
+        }
 	}
 
 	/**

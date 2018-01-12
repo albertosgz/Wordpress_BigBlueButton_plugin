@@ -1591,7 +1591,7 @@ function bigbluebutton_list_active_meetings($args) {
                     "dataSrc": "meeting",
                     "data": function ( d ) {
                         return $.extend( {}, d, {
-                            "action": "bbbadmin_action_get_active_meetings"
+                            "action": "bbbadminpanel_action_get_active_meetings"
                         } );
                     }
                 },
@@ -1985,7 +1985,6 @@ function bigbluebutton_secToDuration($duration) {
 function bigbluebutton_getDatatableJS() {
 
     return  '<link rel="stylesheet" type="text/css" href="'.BBB_ADMINISTRATION_PANEL_DIR.'/DataTables/datatables.min.css"/>
-             <script type="text/javascript" src="'.BBB_ADMINISTRATION_PANEL_DIR.'/DataTables/datatables.min.js"></script>
-             <script type="text/javascript" src="'.BBB_ADMINISTRATION_PANEL_DIR.'/js/xml2json.min.js"></script>';
+             <script type="text/javascript" src="'.BBB_ADMINISTRATION_PANEL_DIR.'/DataTables/datatables.min.js"></script>';
 
 }
