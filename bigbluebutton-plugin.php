@@ -79,10 +79,25 @@ add_action('plugins_loaded', 'bbb_admin_panel_update' );
 add_action('plugins_loaded', 'bbb_admin_panel_widget_init' );
 set_error_handler("bbb_admin_panel_warning_handler", E_WARNING);
 
+//constant DB table names
+define("BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME", "bigbluebutton");
+define("BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME", "bigbluebutton_logs");
 
 //================================================================================
 //------------------------------ Main Functions ----------------------------------
 //================================================================================
+function bbb_admin_panel_get_db_table_name() {
+    global $wpdb;
+    return $wpdb->prefix . BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
+}
+
+function bbb_admin_panel_get_db_table_name_logs() {
+    global $wpdb;
+    return $wpdb->prefix . BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+}
+
+
+
 // Sessions are required by the plugin to work.
 function bbb_admin_panel_init() {
     bbb_admin_panel_init_sessions();
@@ -215,7 +230,7 @@ function bbb_admin_panel_update() {
     //
     // //Sets the name of the table
     // $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
-    // $table_logs_name = BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+    // $table_logs_name = bbb_admin_panel_get_db_table_name_logs();
     //
     // ////////////////// Updates for version 1.3.1 and earlier //////////////////
     // $bbb_admin_panel_plugin_version_installed = get_option('bbb_admin_panel_plugin_version');
@@ -313,11 +328,10 @@ function bbb_admin_panel_update() {
 }
 
 function bbb_admin_panel_uninstall () {
-    global $wpdb;
 
     //In case is deactivateing an overwritten version
     if( get_option('bbb_db_version') ) {
-        $table_name_old = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME . "_old_meetingRooms";
+        $table_name_old = bbb_admin_panel_get_db_table_name() . "_old_meetingRooms";
         $wpdb->query("DROP TABLE IF EXISTS $table_name_old");
         delete_option('bbb_db_version');
         delete_option('mt_bbb_url');
@@ -331,10 +345,10 @@ function bbb_admin_panel_uninstall () {
     delete_option('bbb_admin_panel_permissions');
 
     //Sets the name of the table
-    $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
+    $table_name = bbb_admin_panel_get_db_table_name();
     $wpdb->query("DROP TABLE IF EXISTS $table_name");
 
-    $table_logs_name = BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+    $table_logs_name = bbb_admin_panel_get_db_table_name_logs();
     $wpdb->query("DROP TABLE IF EXISTS $table_logs_name");
 
 }
@@ -345,13 +359,9 @@ function bbb_admin_panel_init_database() {
 
     global $wpdb;
 
-    //constant DB table names
-    define("BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME", $wpdb->prefix . "bigbluebutton");
-    define("BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME", $wpdb->prefix . "bigbluebutton_logs");
-
     //Sets the name of the table
-    $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
-    $table_logs_name = BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+    $table_name = bbb_admin_panel_get_db_table_name();
+    $table_logs_name = bbb_admin_panel_get_db_table_name_logs();
 
     //Execute sql
     $sql = "CREATE TABLE " . $table_name . " (
@@ -449,8 +459,8 @@ function bigbluebutton_sidebar($args) {
 //Create the form called by the Shortcode and Widget functions
 function bigbluebutton_form($args, $bigbluebutton_form_in_widget = false) {
     global $wpdb, $wp_version, $current_site, $current_user, $wp_roles;
-    $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
-    $table_logs_name = BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+    $table_name = bbb_admin_panel_get_db_table_name();
+    $table_logs_name = bbb_admin_panel_get_db_table_name_logs();
 
     $token = isset($args['token']) ?$args['token']: null;
     $tokens = isset($args['tokens']) ?$args['tokens']: null;
@@ -984,7 +994,7 @@ function bigbluebutton_create_meetings() {
             $alreadyExists = false;
 
             //Checks the meeting to be created to see if it already exists in wordpress database
-            $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
+            $table_name = bbb_admin_panel_get_db_table_name();
             $listOfMeetings = $wpdb->get_results("SELECT meetingID, meetingName FROM ".$table_name);
 
             foreach ($listOfMeetings as $meeting) {
@@ -1092,7 +1102,7 @@ function bigbluebutton_upload_rooms() {
                                 'VoiceBridge',
                                 'Welcome Message',
                             ];
-                            $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
+                            $table_name = bbb_admin_panel_get_db_table_name();
                             $listOfMeetings = [];
                             foreach($wpdb->get_results("SELECT meetingID FROM ".$table_name) as $value) {
                                 $listOfMeetings [] = $value->meetingID;
@@ -1185,8 +1195,8 @@ function bigbluebutton_upload_rooms() {
 // Displays all the meetings available in the bigbluebutton server
 function bigbluebutton_list_meetings() {
     global $wpdb, $wp_version, $current_site, $current_user;
-    $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
-    $table_logs_name = BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+    $table_name = bbb_admin_panel_get_db_table_name();
+    $table_logs_name = bbb_admin_panel_get_db_table_name_logs();
 
     //Initializes the variable that will collect the output
     $out = '';
@@ -1617,8 +1627,8 @@ function bigbluebutton_list_active_meetings($args) {
 // Displays all the recordings available in the bigbluebutton server
 function bigbluebutton_list_recordings($title=null,$args) {
     global $wpdb, $wp_roles, $current_user;
-    $table_name = BBB_ADMINISTRATION_PANEL_DB_TABLE_NAME;
-    $table_logs_name = BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
+    $table_name = bbb_admin_panel_get_db_table_name();
+    $table_logs_name = bbb_admin_panel_get_db_table_name_logs();
 
     $token = isset($args['token']) ?$args['token']: null;
     $tokens = isset($args['tokens']) ?$args['tokens']: null;
