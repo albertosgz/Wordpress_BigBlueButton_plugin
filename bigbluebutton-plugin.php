@@ -1054,8 +1054,10 @@ function bbb_admin_panel_upload_rooms() {
 
                         } else { // wp_handle_upload returned some kind of error. the return does contain error details, so you can use it here if you want.
 
-                            $upload_feedback = 'There was a problem with your upload.';
-                            update_post_meta($post_id,'_xxxx_attached_image',$attach_id);
+                            $upload_feedback = 'There was a problem with your upload';
+                            if (isset($uploaded_file ['error'])) {
+                                $upload_feedback .= ': "' . $uploaded_file ['error'] . '"';
+                            }
 
                         }
 

@@ -342,7 +342,6 @@ class BigBlueButtonAPI {
 	*/
 	public static function getMeetingInfoArray( $meetingID, $modPW, $URL, $SALT ) {
 		$xml = bbb_admin_panel_wrap_simplexml_load_file( BigBlueButtonAPI::getMeetingInfoURL( $meetingID, $modPW, $URL, $SALT ) );
-_log($xml);
         if($xml && $xml->returncode == 'SUCCESS'){ //If there were meetings already created
 			return array( 'returncode' => (string)$xml->returncode, 'meetingID' => (string)$xml->meetingID, 'moderatorPW' => (string)$xml->moderatorPW, 'attendeePW' => (string)$xml->attendeePW, 'hasBeenForciblyEnded' => (string)$xml->hasBeenForciblyEnded, 'running' => (string)$xml->running, 'startTime' => (string)$xml->startTime, 'endTime' => (string)$xml->endTime, 'participantCount' => (string)$xml->participantCount, 'moderatorCount' => (string)$xml->moderatorCount, 'attendees' => (string)$xml->attendees );
 		}
@@ -368,7 +367,6 @@ _log($xml);
 	*/
 	public static function getMeetings( $URL, $SALT ) {
         $url_request = BigBlueButtonAPI::getMeetingsURL( $URL, $SALT );
-		_log($url_request);
 		$xml = bbb_admin_panel_wrap_simplexml_load_file($url_request);
 		if( $xml && $xml->returncode == 'SUCCESS' ) {
 			if( (string)$xml->messageKey )
