@@ -50,20 +50,12 @@ function bbb_wrap_simplexml_load_file($url) {
 	);
 
 	$response = wp_remote_get($url, $args);
-	// var_dump(123);
-	// echo (123);
-	// _log($url);
-	_log(1);
 	if (is_wp_error ($response)) {
 		_log('error response after request to '.$url);
 		_log($response);
 		return false; // Bail early
 	}
 	$body = wp_remote_retrieve_body ($response);
-	// var_dump($response);
-	// var_dump($body);
-	_log(3);
-	// _log(simplexml_load_string($body));
 	return simplexml_load_string($body);
 }
 
