@@ -26,7 +26,6 @@ if(version_compare($wp_version, "2.5", "<")) {
 }
 
 //constant definition
-define("BBB_ADMINISTRATION_PANEL_DIR", WP_PLUGIN_URL . '/Wordpress_BigBlueButton_plugin/' );
 define('BBB_ADMINISTRATION_PANEL_PLUGIN_VERSION', bbb_admin_panel_get_version());
 define('BBB_ADMINISTRATION_PANEL_PLUGIN_URL', plugin_dir_url( __FILE__ ));
 
@@ -120,13 +119,13 @@ function bbb_admin_panel_init_scripts() {
     if (!is_admin()) {
         wp_enqueue_script('jquery');
     }
-    wp_enqueue_script('DataTable', BBB_ADMINISTRATION_PANEL_DIR . '/DataTables/datatables.min.js');
+    wp_enqueue_script('DataTable', BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/DataTables/datatables.min.js');
 }
 
 //Registers the plugin's stylesheet
 function bbb_admin_panel_init_styles() {
-    wp_register_style('BBBAdminPanelStylesheet', BBB_ADMINISTRATION_PANEL_DIR . '/css/bigbluebutton_stylesheet.css');
-    wp_register_style('DataTable', BBB_ADMINISTRATION_PANEL_DIR . '/DataTables/datatables.min.css');
+    wp_register_style('BBBAdminPanelStylesheet', BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/css/bigbluebutton_stylesheet.css');
+    wp_register_style('DataTable', BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/DataTables/datatables.min.css');
 }
 
 //Registers the plugin's stylesheet
@@ -400,7 +399,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
         $dataSubmitted = true;
         $meetingExist = true;
 
-        $meetingID = $_POST['meetingID'];
+        $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_STRING);
 
         $sql = "SELECT * FROM ".$table_name." WHERE meetingID = %s";
         $found = $wpdb->get_row(
@@ -409,10 +408,14 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
         if( $found ) {
 
             if( !$current_user->ID ) {
-                $name = isset($_POST['display_name']) && $_POST['display_name']? htmlspecialchars($_POST['display_name']): $role;
+                if(isset($_POST['display_name']) && $_POST['display_name']) {
+                    $name = htmlspecialchars(filter_input(INPUT_POST, 'display_name', FILTER_SANITIZE_STRING));
+                } else {
+                    $name = $role;
+                }
 
                 if( bbb_admin_panel_validate_defaultRole($role, 'none') ) {
-                    $password = $_POST['pwd'];
+                    $password = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_STRING);
                 } else {
                     $password = $permissions[$role]['defaultRole'] == 'none'? $found->moderatorPW: $found->attendeePW;
                 }
@@ -429,7 +432,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
                     $name = $role;
                 }
                 if( bbb_admin_panel_validate_defaultRole($role, 'none') ) {
-                    $password = $_POST['pwd'];
+                    $password = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_STRING);
                 } else {
                     $password = $permissions[$role]['defaultRole'] == 'moderator'? $found->moderatorPW: $found->attendeePW;
                 }
@@ -616,12 +619,34 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
 
 //Displays the javascript that handles redirecting a user, when the meeting has started
 //the meetingName is the meetingID
+add_action( 'wp_ajax_bbbadminpanel_action_display_redirect_script', 'bbbadminpanel_action_display_redirect_script' );
+
+function bbbadminpanel_action_display_redirect_script() {
+	global $wpdb; // this is how you get access to the database
+
+    $url_val = get_option('bbb_admin_panel_url');
+    $salt_val = get_option('bbb_admin_panel_salt');
+    $meetingID = filter_input(INPUT_GET, 'meetingID', FILTER_SANITIZE_URL);
+
+    if (!$meetingID) {
+        header("HTTP/1.0 400 Bad Request. [recordingID] parameter was not included in this query.");
+        wp_die();
+    }
+
+    $info = BigBlueButtonAPI::getMeetingXML( $meetingID, $url_val, $salt_val );
+
+    $xmlResponse = simplexml_load_string ($info);
+    echo json_encode($xmlResponse);
+
+	wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 function bbb_admin_panel_display_redirect_script($bigbluebutton_joinURL, $meetingID, $meetingName, $name) {
     $out = '
     <script type="text/javascript">
         function bigbluebutton_ping() {
             jQuery.ajax({
-                url : "' . BBB_ADMINISTRATION_PANEL_DIR. '/php/broker.php?action=ping&meetingID=' . urlencode($meetingID) . '",
+                url : "' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL. '/bbbadminpanel_action_display_redirect_script?action=ping&meetingID=' . urlencode($meetingID) . '",
                 async : true,
                 dataType : "xml",
                 success : function(xmlDoc) {
@@ -714,8 +739,8 @@ function bbb_admin_panel_general_settings() {
     if( isset($_POST['SubmitSettings']) && $_POST['SubmitSettings'] == 'Save Settings') {
 
         //Reads their posted value
-        $url_val = $_POST[ 'bbb_admin_panel_url' ];
-        $salt_val = $_POST[ 'bbb_admin_panel_salt' ];
+        $url_val = filter_input(INPUT_POST, 'bbb_admin_panel_url', FILTER_SANITIZE_STRING);
+        $salt_val = filter_input(INPUT_POST, 'bbb_admin_panel_salt', FILTER_SANITIZE_STRING);
 
         //
         if(strripos($url_val, "/bigbluebutton/") == false) {
@@ -771,7 +796,7 @@ function bbb_admin_panel_permission_settings() {
     //Initializes the variable that will collect the output
     $out = '';
 
-    if( isset($_POST['SubmitPermissions']) && $_POST['SubmitPermissions'] == 'Save Permissions' ) {
+    if( isset($_POST['SubmitPermissions']) && filter_input(INPUT_POST, 'SubmitPermissions', FILTER_SANITIZE_STRING) == 'Save Permissions' ) {
         foreach($roles as $key => $value) {
             if( !isset($_POST[$key.'-defaultRole']) ) {
                 if( $value == "Administrator" ) {
@@ -782,7 +807,7 @@ function bbb_admin_panel_permission_settings() {
                     $permissions[$key]['defaultRole'] = 'attendee';
                 }
             } else {
-                $permissions[$key]['defaultRole'] = $_POST[$key.'-defaultRole'];
+                $permissions[$key]['defaultRole'] = filter_input(INPUT_POST, $key.'-defaultRole', FILTER_SANITIZE_STRING);
             }
 
             if( !isset($_POST[$key.'-participate']) ) {
@@ -871,13 +896,13 @@ function bbb_admin_panel_create_meetings() {
     if( isset($_POST['SubmitCreate']) && $_POST['SubmitCreate'] == 'Create' ) {
 
         /// Reads the posted values
-        $meetingName = htmlspecialchars(stripcslashes($_POST[ 'meetingName' ]));
-        $attendeePW = $_POST[ 'attendeePW' ]? $_POST[ 'attendeePW' ]: bbb_admin_panel_generatePassword(6, 2);
-        $moderatorPW = $_POST[ 'moderatorPW' ]? $_POST[ 'moderatorPW' ]: bbb_admin_panel_generatePassword(6, 2, $attendeePW);
-        $voiceBridge = $_POST[ 'voiceBridge' ]? $_POST[ 'voiceBridge' ]: 0;
+        $meetingName = htmlspecialchars(stripcslashes(filter_input(INPUT_POST, 'meetingName', FILTER_SANITIZE_STRING)));
+        $attendeePW = filter_input(INPUT_POST, 'attendeePW', FILTER_SANITIZE_STRING)? : bbb_admin_panel_generatePassword(6, 2);
+        $moderatorPW = filter_input(INPUT_POST, 'moderatorPW', FILTER_SANITIZE_STRING)? : bbb_admin_panel_generatePassword(6, 2, $attendeePW);
+        $voiceBridge = filter_input(INPUT_POST, 'voiceBridge', FILTER_SANITIZE_STRING)? : 0;
         $waitForModerator = (isset($_POST[ 'waitForModerator' ]) && $_POST[ 'waitForModerator' ] == 'True')? true: false;
         $recorded = (isset($_POST[ 'recorded' ]) && $_POST[ 'recorded' ] == 'True')? true: false;
-        $welcome = htmlspecialchars(stripcslashes($_POST[ 'welcome' ]));
+        $welcome = htmlspecialchars(stripcslashes(filter_input(INPUT_POST, 'welcome', FILTER_SANITIZE_STRING)));
         $meetingVersion = time();
         /// Assign a random seed to generate unique ID on a BBB server
         $meetingID = bbb_admin_panel_generateToken();
@@ -961,116 +986,116 @@ function bbb_admin_panel_upload_rooms() {
 
     if(isset($_POST['xxxx_manual_save_flag'])) {
 
-                // HANDLE THE FILE UPLOAD
-                $upload_feedback = false;
+        // HANDLE THE FILE UPLOAD
+        $upload_feedback = false;
 
-                // If the upload field has a file in it
-                if(isset($_FILES['xxxx_image']) && ($_FILES['xxxx_image']['size'] > 0)) {
-                    // Get the type of the uploaded file. This is returned as "type/extension"
-                    $arr_file_type = wp_check_filetype(basename($_FILES['xxxx_image']['name']));
-                    $uploaded_file_type = $arr_file_type['type'];
+        // If the upload field has a file in it
+        if(isset($_FILES['xxxx_image']) && ($_FILES['xxxx_image']['size'] > 0)) {
+            // Get the type of the uploaded file. This is returned as "type/extension"
+            $arr_file_type = wp_check_filetype(basename($_FILES['xxxx_image']['name']));
+            $uploaded_file_type = $arr_file_type['type'];
 
-                    // Set an array containing a list of acceptable formats
-                    $allowed_file_types = array('text/csv');
+            // Set an array containing a list of acceptable formats
+            $allowed_file_types = array('text/csv');
 
-                    // If the uploaded file is the right format
-                    if(in_array($uploaded_file_type, $allowed_file_types)) {
+            // If the uploaded file is the right format
+            if(in_array($uploaded_file_type, $allowed_file_types)) {
 
-                        // Options array for the wp_handle_upload function. 'test_upload' => false
-                        $upload_overrides = array( 'test_form' => false );
+                // Options array for the wp_handle_upload function. 'test_upload' => false
+                $upload_overrides = array( 'test_form' => false );
 
-                        // Handle the upload using WP's wp_handle_upload function. Takes the posted file and an options array
-                        $uploaded_file = wp_handle_upload($_FILES['xxxx_image'], $upload_overrides);
+                // Handle the upload using WP's wp_handle_upload function. Takes the posted file and an options array
+                $uploaded_file = wp_handle_upload($_FILES['xxxx_image'], $upload_overrides);
 
 
-                        // If the wp_handle_upload call returned a local path for the image
-                        if(isset($uploaded_file['file'])) {
+                // If the wp_handle_upload call returned a local path for the image
+                if(isset($uploaded_file['file'])) {
 
-                            // The wp_insert_attachment function needs the literal system path, which was passed back from wp_handle_upload
-                            $file_name_and_location = $uploaded_file['file'];
+                    // The wp_insert_attachment function needs the literal system path, which was passed back from wp_handle_upload
+                    $file_name_and_location = $uploaded_file['file'];
 
-                            $overwrite_rooms = (isset($_POST[ 'overwrite_rooms' ]) && ($_POST[ 'overwrite_rooms' ] == 'True' || $_POST[ 'overwrite_rooms' ] == 'true'));
+                    $overwrite_rooms = (isset($_POST[ 'overwrite_rooms' ]) && ($_POST[ 'overwrite_rooms' ] == 'True' || $_POST[ 'overwrite_rooms' ] == 'true'));
 
-                            $row = 1;
-                            $inserted = 0;
-                            $repeated = 0;
-                            $headers = [
-                                'Meeting Room Name',
-                                'Meeting Token',
-                                'Attendee Password',
-                                'Moderator Password',
-                                'Wait for Moderator',
-                                'Recorded',
-                                'VoiceBridge',
-                                'Welcome Message',
-                            ];
-                            $table_name = bbb_admin_panel_get_db_table_name();
-                            $listOfMeetings = [];
-                            foreach($wpdb->get_results("SELECT meetingID FROM ".$table_name) as $value) {
-                                $listOfMeetings [] = $value->meetingID;
-                            }
-
-                            if (($gestor = fopen($file_name_and_location, "r")) !== FALSE) {
-                                while (($data = fgetcsv($gestor)) !== FALSE) {
-
-                                    if ($row === 1) {
-                                        for ($c=0; $c < count($headers); $c++) {
-                                            if ($data[$c] != $headers[$c]) {
-                                                $upload_feedback = 'first row must be the headers. $c='.$c.'. "'.$data[$c].'" != "'.$headers[$c].'". Row:'.print_r($data, true).'. Headers: '.print_r($headers, true);
-                                                break 2;
-                                            }
-                                        }
-                                    } else {
-
-                                        $toInsert = true;
-                                        if (in_array($data[1], $listOfMeetings)) {
-                                            $repeated++;
-                                            $toInsert = false;
-                                        }
-                                        if ($toInsert || $overwrite_rooms) {
-
-                                            $inserted += $wpdb->insert( $table_name, array(
-                                                'meetingID' => $data[1],
-                                                'meetingName' => $data[0],
-                                                'meetingVersion' => time(),
-                                                'attendeePW' => $data[2],
-                                                'moderatorPW' => $data[3],
-                                                'waitForModerator' => $data[4],
-                                                'recorded' => $data[5],
-                                                'voiceBridge' => $data[6],
-                                                'welcome' => $data[7],
-                                            ));
-                                        }
-                                    }
-                                    $row++;
-                                }
-                                fclose($gestor);
-                            }
-
-                            // Set the feedback flag to false, since the upload was successful
-                            if (!$upload_feedback) {
-                                $upload_feedback = 'Uploaded ok<br />Readed '.($row-2).'<br />Inserted '.$inserted.'<br />Repeated '.$repeated.' (same token)<br />';
-                            }
-
-                        } else { // wp_handle_upload returned some kind of error. the return does contain error details, so you can use it here if you want.
-
-                            $upload_feedback = 'There was a problem with your upload';
-                            if (isset($uploaded_file ['error'])) {
-                                $upload_feedback .= ': "' . $uploaded_file ['error'] . '"';
-                            }
-
-                        }
-
-                    } else { // wrong file type
-
-                        $upload_feedback = 'Please upload only CSV files (received ' . $uploaded_file_type . ' type).';
-
+                    $row = 1;
+                    $inserted = 0;
+                    $repeated = 0;
+                    $headers = [
+                        'Meeting Room Name',
+                        'Meeting Token',
+                        'Attendee Password',
+                        'Moderator Password',
+                        'Wait for Moderator',
+                        'Recorded',
+                        'VoiceBridge',
+                        'Welcome Message',
+                    ];
+                    $table_name = bbb_admin_panel_get_db_table_name();
+                    $listOfMeetings = [];
+                    foreach($wpdb->get_results("SELECT meetingID FROM ".$table_name) as $value) {
+                        $listOfMeetings [] = $value->meetingID;
                     }
 
-                } else { // No file was passed
+                    if (($gestor = fopen($file_name_and_location, "r")) !== FALSE) {
+                        while (($data = fgetcsv($gestor)) !== FALSE) {
 
-                    $upload_feedback = 'No file was passed.';
+                            if ($row === 1) {
+                                for ($c=0; $c < count($headers); $c++) {
+                                    if ($data[$c] != $headers[$c]) {
+                                        $upload_feedback = 'first row must be the headers. $c='.$c.'. "'.$data[$c].'" != "'.$headers[$c].'". Row:'.print_r($data, true).'. Headers: '.print_r($headers, true);
+                                        break 2;
+                                    }
+                                }
+                            } else {
+
+                                $toInsert = true;
+                                if (in_array($data[1], $listOfMeetings)) {
+                                    $repeated++;
+                                    $toInsert = false;
+                                }
+                                if ($toInsert || $overwrite_rooms) {
+
+                                    $inserted += $wpdb->insert( $table_name, array(
+                                        'meetingID' => $data[1],
+                                        'meetingName' => $data[0],
+                                        'meetingVersion' => time(),
+                                        'attendeePW' => $data[2],
+                                        'moderatorPW' => $data[3],
+                                        'waitForModerator' => $data[4],
+                                        'recorded' => $data[5],
+                                        'voiceBridge' => $data[6],
+                                        'welcome' => $data[7],
+                                    ));
+                                }
+                            }
+                            $row++;
+                        }
+                        fclose($gestor);
+                    }
+
+                    // Set the feedback flag to false, since the upload was successful
+                    if (!$upload_feedback) {
+                        $upload_feedback = 'Uploaded ok<br />Readed '.($row-2).'<br />Inserted '.$inserted.'<br />Repeated '.$repeated.' (same token)<br />';
+                    }
+
+                } else { // wp_handle_upload returned some kind of error. the return does contain error details, so you can use it here if you want.
+
+                    $upload_feedback = 'There was a problem with your upload';
+                    if (isset($uploaded_file ['error'])) {
+                        $upload_feedback .= ': "' . $uploaded_file ['error'] . '"';
+                    }
+
                 }
+
+            } else { // wrong file type
+
+                $upload_feedback = 'Please upload only CSV files (received ' . $uploaded_file_type . ' type).';
+
+            }
+
+        } else { // No file was passed
+
+            $upload_feedback = 'No file was passed.';
+        }
 
         if ($upload_feedback) {
 
@@ -1113,7 +1138,7 @@ function bbb_admin_panel_list_meetings() {
 
     if( isset($_POST['SubmitList']) ) { //Creates then joins the meeting. If any problems occur the error is displayed
         // Read the posted value and delete
-        $meetingID = $_POST['meetingID'];
+        $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_STRING);
         $sql = "SELECT * FROM ".$table_name." WHERE meetingID = %s";
         $found = $wpdb->get_row(
                 $wpdb->prepare($sql, $meetingID)
@@ -1527,6 +1552,43 @@ function bbb_admin_panel_list_active_meetings($args) {
 //---------------------------------List Recordings----------------------------------
 //================================================================================
 // Displays all the recordings available in the bigbluebutton server
+
+add_action( 'wp_ajax_bbbadminpanel_action_post_manage_recordings', 'bbbadminpanel_action_post_manage_recordings' );
+
+function bbbadminpanel_action_post_manage_recordings() {
+	global $wpdb; // this is how you get access to the database
+
+    $url_val = get_option('bbb_admin_panel_url');
+    $salt_val = get_option('bbb_admin_panel_salt');
+    $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_URL);
+    $recordingID = filter_input(INPUT_GET, 'recordingID', FILTER_SANITIZE_URL);
+
+    if (!$recordingID) {
+        header("HTTP/1.0 400 Bad Request. [recordingID] parameter was not included in this query.");
+        wp_die();
+    }
+
+    switch ($action) {
+        case "publish":
+            $info = BigBlueButtonAPI::doPublishRecordings($recordingID, 'true', $url_val, $salt_val);
+        break;
+        case "unpublish":
+            $info = BigBlueButtonAPI::doPublishRecordings($recordingID, 'false', $url_val, $salt_val);
+        break;
+        case "delete":
+            $info = BigBlueButtonAPI::doDeleteRecordings($recordingID, $url_val, $salt_val);
+        break;
+        default:
+        header("HTTP/1.0 400 Bad Request. [action] unknown.");
+        wp_die();
+    }
+
+    $xmlResponse = simplexml_load_string ($info);
+    echo json_encode($xmlResponse);
+
+	wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 function bbb_admin_panel_list_recordings($title=null,$args) {
     global $wpdb, $wp_roles, $current_user;
     $table_name = bbb_admin_panel_get_db_table_name();
@@ -1626,24 +1688,26 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
                             if (el_a.title == \'Hide\' ) {
                                 action = \'unpublish\';
                                 el_a.title = \'Show\';
-                                el_img.src = \'' . BBB_ADMINISTRATION_PANEL_DIR . '/images/show.gif\';
+                                el_img.src = \'' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/images/show.gif\';
                             } else {
                                 action = \'publish\';
                                 el_a.title = \'Hide\';
-                                el_img.src = \'' . BBB_ADMINISTRATION_PANEL_DIR . '/images/hide.gif\';
+                                el_img.src = \'' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/images/hide.gif\';
                             }
                         }
                     } else {
                         // Removes the line from the table
                         jQuery(document.getElementById(\'actionbar-tr-\'+ recordingid)).remove();
                     }
-                    actionurl = "' . BBB_ADMINISTRATION_PANEL_DIR . '/php/broker.php?action=" + action + "&recordingID=" + recordingid;
+                    actionurl = "' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/bbbadminpanel_action_post_manage_recordings?action=" + action + "&recordingID=" + recordingid;
                     jQuery.ajax({
                             url : actionurl,
                             async : false,
                             success : function(response) {
+                                alert("deleted ok");
                             },
                             error : function(xmlHttpRequest, status, error) {
+                                alert("error deleting");
                                 console.debug(xmlHttpRequest);
                             }
                         });
@@ -1716,9 +1780,9 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
             /// Prepare actionbar if role is allowed to manage the recordings
             if ( bbb_admin_panel_can_manageRecordings($role) ) {
                 $action = ($recording['published'] == 'true')? 'Hide': 'Show';
-                $actionbar = "<a id=\"actionbar-publish-a-".$recording['recordID']."\" title=\"".$action."\" href=\"#\"><img id=\"actionbar-publish-img-".$recording['recordID']."\" src=\"".get_bloginfo('url')."/wp-content/plugins/bigbluebutton/images/".strtolower($action).".gif\" class=\"iconsmall\" onClick=\"actionCall('publish', '".$recording['recordID']."'); return
+                $actionbar = "<a id=\"actionbar-publish-a-".$recording['recordID']."\" title=\"".$action."\" href=\"#\"><img id=\"actionbar-publish-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."wp-content/plugins/bigbluebutton/images/".strtolower($action).".gif\" class=\"iconsmall\" onClick=\"actionCall('publish', '".$recording['recordID']."'); return
  false;\" /></a>";
-                $actionbar .= "<a id=\"actionbar-delete-a-".$recording['recordID']."\" title=\"Delete\" href=\"#\"><img id=\"actionbar-delete-img-".$recording['recordID']."\" src=\"".get_bloginfo('url')."/wp-content/plugins/bigbluebutton/images/delete.gif\" class=\"iconsmall\" onClick=\"actionCall('delete', '".$recording['recordID']."'); return false;\" /></a>";
+                $actionbar .= "<a id=\"actionbar-delete-a-".$recording['recordID']."\" title=\"Delete\" href=\"#\"><img id=\"actionbar-delete-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."wp-content/plugins/bigbluebutton/images/delete.gif\" class=\"iconsmall\" onClick=\"actionCall('delete', '".$recording['recordID']."'); return false;\" /></a>";
                 $out .= '
                 <td>'.$actionbar.'</td>';
             }
