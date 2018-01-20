@@ -148,7 +148,7 @@ function bbb_admin_panel_widget_init() {
 function bbb_admin_panel_add_pages() {
 
     //Add a new submenu under Settings
-    $page = add_options_page(__('BBB Admin Panel','menu-test'), __('BigBlueButton','menu-test'), 'manage_options', 'bigbluebutton_general', 'bbb_admin_panel_general_options');
+    $page = add_options_page(__('BBB Admin Panel','menu-test'), __('BBB Admin Panel','menu-test'), 'manage_options', 'bigbluebutton_general', 'bbb_admin_panel_general_options');
 
     //Attaches the plugin's stylesheet to the plugin page just created
     add_action('admin_print_styles-' . $page, 'bbb_admin_panel_admin_styles');
@@ -672,7 +672,7 @@ function bbb_admin_panel_display_redirect_script($bigbluebutton_joinURL, $meetin
           <td>
             Welcome '.$name.'!<br /><br />
             '.$meetingName.' session has not been started yet.<br /><br />
-            <div align="center"><img src="'.site_url('/wp-content/plugins/bigbluebutton/images/polling.gif').'" /></div><br />
+            <div align="center"><img src="' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL . 'images/polling.gif" /></div><br />
             (Your browser will automatically refresh and join the meeting when it starts.)
           </td>
         </tr>
@@ -1782,9 +1782,9 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
             /// Prepare actionbar if role is allowed to manage the recordings
             if ( bbb_admin_panel_can_manageRecordings($role) ) {
                 $action = ($recording['published'] == 'true')? 'Hide': 'Show';
-                $actionbar = "<a id=\"actionbar-publish-a-".$recording['recordID']."\" title=\"".$action."\" href=\"#\"><img id=\"actionbar-publish-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."wp-content/plugins/bigbluebutton/images/".strtolower($action).".gif\" class=\"iconsmall\" onClick=\"actionCall('publish', '".$recording['recordID']."'); return
+                $actionbar = "<a id=\"actionbar-publish-a-".$recording['recordID']."\" title=\"".$action."\" href=\"#\"><img id=\"actionbar-publish-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."images/".strtolower($action).".gif\" class=\"iconsmall\" onClick=\"actionCall('publish', '".$recording['recordID']."'); return
  false;\" /></a>";
-                $actionbar .= "<a id=\"actionbar-delete-a-".$recording['recordID']."\" title=\"Delete\" href=\"#\"><img id=\"actionbar-delete-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."wp-content/plugins/bigbluebutton/images/delete.gif\" class=\"iconsmall\" onClick=\"actionCall('delete', '".$recording['recordID']."'); return false;\" /></a>";
+                $actionbar .= "<a id=\"actionbar-delete-a-".$recording['recordID']."\" title=\"Delete\" href=\"#\"><img id=\"actionbar-delete-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."images/delete.gif\" class=\"iconsmall\" onClick=\"actionCall('delete', '".$recording['recordID']."'); return false;\" /></a>";
                 $out .= '
                 <td>'.$actionbar.'</td>';
             }
