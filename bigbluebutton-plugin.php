@@ -177,7 +177,6 @@ function bbb_admin_panel_install () {
 
     if ( is_plugin_active( 'bigbluebutton/bigbluebutton-plugin.php' ) ) {
         add_action( 'admin_notices', 'bbb_admin_panel_display_error_installation' );
-        alert('Original BigBlueButton plugin is already activated, and must be disabled before');
         return false;
     }
 
