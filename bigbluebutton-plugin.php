@@ -1130,9 +1130,6 @@ function bbb_admin_panel_list_meetings() {
     //Initializes the variable that will collect the output
     $out = '';
 
-    //Displays the title of the page
-    $out .= "<h2>List of Meeting Rooms</h2>";
-
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
 
@@ -1268,9 +1265,12 @@ function bbb_admin_panel_list_meetings() {
 
     //Checks to see if there are no meetings in the wordpress db and if so alerts the user
     if(count($listOfMeetings) == 0) {
-        $out .= '<div class="updated"><p><strong>There are no meeting rooms.</strong></p></div>';
+        $out .= '<div class="updated"><p><strong>There are no meeting rooms configured in by this plugin.</strong></p></div>';
         return $out;
     }
+
+    //Displays the title of the page
+    $out .= "<h2>List of Meeting Rooms</h2>";
 
     //Iinitiallizes the table
     $printed = false;
@@ -1281,7 +1281,7 @@ function bbb_admin_panel_list_meetings() {
         $info = BigBlueButtonAPI::getMeetingInfoArray( $meeting->meetingID, $meeting->moderatorPW, $url_val, $salt_val);
         //Analyzes the bigbluebutton server's response
         if(!$info) {//If the server is unreachable, then prompts the user of the necessary action
-            $out .= '<div class="updated"><p><strong>Unable to display the meetings. Please check the url of the bigbluebutton server AND check to see if the bigbluebutton server is running.</strong></p></div>';
+            $out .= '<div class="updated"><p><strong>Unable to display the meetings. Please check the url of the bigbluebutton server AND check to see if the bigbluebutton server is running. Or the rooms are not set by this plugin.</strong></p></div>';
             return $out;
         } else if( $info['returncode'] == 'FAILED' && $info['messageKey'] != 'notFound' && $info['messageKey'] != 'invalidPassword') { /// If the meeting was unable to be deleted due to an error
             if($info['messageKey'] == 'checksumError') {
@@ -1437,7 +1437,7 @@ function bbb_admin_panel_list_active_meetings($args) {
     }
 
     //Displays the title of the page
-    $out = "<h2>List of Active Meeting Rooms in BBB Server</h2>";
+    $out = "";
 
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
@@ -1461,6 +1461,8 @@ function bbb_admin_panel_list_active_meetings($args) {
     }
     else
     { /// The meeting exists in the bigbluebutton server
+
+        $out = "<h2>List of Active Meeting Rooms in BBB Server</h2>";
 
         $out .= '
         </tbody>
@@ -1663,7 +1665,7 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
 
     //Checks to see if there are no meetings in the wordpress db and if so alerts the user
     if(count($listOfRecordings) == 0) {
-        $out .= '<div class="updated"><p><strong>There are no recordings available.</strong></p></div>';
+        $out .= '<div class="updated"><p><strong>There are no recordings available. Or they are not generated from rooms setup by this plugin.</strong></p></div>';
         return $out;
     }
 
