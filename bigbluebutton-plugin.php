@@ -44,8 +44,8 @@ require('php/bbb_api.php');
 //================================================================================
 //------------------Code for development------------------------------------------
 //================================================================================
-if(!function_exists('_log')) {
-    function _log( $message ) {
+if(!function_exists('bbb_admin_panel_log')) {
+    function bbb_admin_panel_log( $message ) {
         if( WP_DEBUG === true ) {
             if( is_array( $message ) || is_object( $message ) ) {
                 error_log( print_r( $message, true ) );
@@ -55,7 +55,7 @@ if(!function_exists('_log')) {
         }
     }
 }
-_log('Loading the plugin');
+bbb_admin_panel_log('Loading the plugin');
 
 //================================================================================
 //------------------------------------Main----------------------------------------
@@ -279,13 +279,13 @@ function bbb_admin_panel_init_database() {
     );";
     dbDelta($sql);
 
-    $sql = "INSERT INTO " . $table_name . " (meetingID, meetingName, meetingVersion, attendeePW, moderatorPW)
-    VALUES ('".bbb_admin_panel_generateToken()."','Demo meeting', '".time()."', 'ap', 'mp');";
-    dbDelta($sql);
-
-    $sql = "INSERT INTO " . $table_name . " (meetingID, meetingName, meetingVersion, attendeePW, moderatorPW, recorded)
-    VALUES ('".bbb_admin_panel_generateToken()."','Demo meeting (recorded)', '".time()."', 'ap', 'mp', TRUE);";
-    dbDelta($sql);
+    // $sql = "INSERT INTO " . $table_name . " (meetingID, meetingName, meetingVersion, attendeePW, moderatorPW)
+    // VALUES ('".bbb_admin_panel_generateToken()."','Demo meeting', '".time()."', 'ap', 'mp');";
+    // dbDelta($sql);
+    //
+    // $sql = "INSERT INTO " . $table_name . " (meetingID, meetingName, meetingVersion, attendeePW, moderatorPW, recorded)
+    // VALUES ('".bbb_admin_panel_generateToken()."','Demo meeting (recorded)', '".time()."', 'ap', 'mp', TRUE);";
+    // dbDelta($sql);
 
     $sql = "CREATE TABLE " . $table_logs_name . " (
     id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -735,7 +735,10 @@ function bbb_admin_panel_general_settings() {
     $salt_val = get_option('bbb_admin_panel_salt');
 
     //Obtains the meeting information of the meeting that is going to be terminated
-    if( isset($_POST['SubmitSettings']) && $_POST['SubmitSettings'] == 'Save Settings') {
+    if( isset($_POST['SubmitSettings']) &&
+            $_POST['SubmitSettings'] == 'Save Settings' &&
+            isset( $_POST['nonce_settings']) &&
+            wp_verify_nonce( $_POST['nonce_settings'], 'bbb_admin_panel_general_settings' )) {
 
         //Reads their posted value
         $url_val = filter_input(INPUT_POST, 'bbb_admin_panel_url', FILTER_SANITIZE_STRING);
@@ -771,11 +774,10 @@ function bbb_admin_panel_general_settings() {
     </p>
     <p>BigBlueButton shared secret:<input type="text" name="bbb_admin_panel_salt" value="'.$salt_val.'" size="40"><br> It can be found in /var/lib/tomcat7/webapps/bigbluebutton/WEB-INF/classes/bigbluebutton.properties.<br>eg. \'8cd8ef52e8e101574e400365b55e11a6\'.
     </p>
-
     <p class="submit">
     <input type="submit" name="SubmitSettings" class="button-primary" value="Save Settings" />
     </p>
-
+    <input type="hidden" name="nonce_settings" value="'.wp_create_nonce('bbb_admin_panel_general_settings').'" />
     </form>
     <hr />';
 
@@ -795,7 +797,13 @@ function bbb_admin_panel_permission_settings() {
     //Initializes the variable that will collect the output
     $out = '';
 
-    if( isset($_POST['SubmitPermissions']) && filter_input(INPUT_POST, 'SubmitPermissions', FILTER_SANITIZE_STRING) == 'Save Permissions' ) {
+    if( isset($_POST['SubmitPermissions']) &&
+            filter_input(INPUT_POST, 'SubmitPermissions', FILTER_SANITIZE_STRING) == 'Save Permissions' &&
+            isset( $_POST['nonce_permissions']) &&
+            wp_verify_nonce( $_POST['nonce_permissions'], 'bbb_admin_panel_permission_settings' )) {
+
+        check_admin_referer('bbb_admin_panel_permission_settings');
+
         foreach($roles as $key => $value) {
             if( !isset($_POST[$key.'-defaultRole']) ) {
                 if( $value == "Administrator" ) {
@@ -868,6 +876,7 @@ function bbb_admin_panel_permission_settings() {
     $out .= '
     </table>
     <p class="submit"><input type="submit" name="SubmitPermissions" class="button-primary" value="Save Permissions" /></p>
+    <input type="hidden" name="nonce_permissions" value="'.wp_create_nonce('bbb_admin_panel_permission_settings').'" />
     </form>
     <hr />';
 
@@ -892,7 +901,10 @@ function bbb_admin_panel_create_meetings() {
     $salt_val = get_option('bbb_admin_panel_salt');
 
     //Obtains the meeting information of the meeting that is going to be created
-    if( isset($_POST['SubmitCreate']) && $_POST['SubmitCreate'] == 'Create' ) {
+    if (isset($_POST['SubmitCreate']) &&
+            $_POST['SubmitCreate'] == 'Create' &&
+            isset( $_POST['nonce_create_meetings']) &&
+            wp_verify_nonce( $_POST['nonce_create_meetings'], 'bbb_admin_panel_create_meetings' )) {
 
         /// Reads the posted values
         $meetingName = htmlspecialchars(stripcslashes(filter_input(INPUT_POST, 'meetingName', FILTER_SANITIZE_STRING)));
@@ -963,6 +975,7 @@ function bbb_admin_panel_create_meetings() {
     <p>Recorded meeting: <input type="checkbox" name="recorded" value="True" /></p>
     <p>Welcome message: <input type="text" name="welcome" value="" size="20"> (leave blank to default one)</p>
     <p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Create" /></p>
+    <input type="hidden" name="nonce_create_meetings" value="'.wp_create_nonce('bbb_admin_panel_create_meetings').'" />
     </form>
     <hr />';
 
@@ -980,10 +993,12 @@ function bbb_admin_panel_upload_rooms() {
     $out = '';
 
     //Displays the title of the page
-    $out .= "<h2>Upload rooms backup</h2>";
+    $out .= "<h2>Restore database from backup CSV file</h2>";
     $out .= "<p>Hint: The expected file is the output of the CSV file generated exporting the next List of Meeting Rooms table</p>";
 
-    if(isset($_POST['xxxx_manual_save_flag'])) {
+    if(isset($_POST['xxxx_manual_save_flag']) &&
+            isset( $_POST['nonce_upload_rooms']) &&
+            wp_verify_nonce( $_POST['nonce_upload_rooms'], 'bbb_admin_panel_upload_rooms' )) {
 
         // HANDLE THE FILE UPLOAD
         $upload_feedback = false;
@@ -1054,15 +1069,15 @@ function bbb_admin_panel_upload_rooms() {
                                 if ($toInsert || $overwrite_rooms) {
 
                                     $inserted += $wpdb->insert( $table_name, array(
-                                        'meetingID' => $data[1],
-                                        'meetingName' => $data[0],
+                                        'meetingID' => filter_var($data[1], FILTER_SANITIZE_STRING),
+                                        'meetingName' => filter_var($data[0], FILTER_SANITIZE_STRING),
                                         'meetingVersion' => time(),
-                                        'attendeePW' => $data[2],
-                                        'moderatorPW' => $data[3],
-                                        'waitForModerator' => $data[4],
-                                        'recorded' => $data[5],
-                                        'voiceBridge' => $data[6],
-                                        'welcome' => $data[7],
+                                        'attendeePW' => filter_var($data[2], FILTER_SANITIZE_STRING),
+                                        'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_STRING),
+                                        'waitForModerator' => filter_var($data[4], FILTER_SANITIZE_STRING),
+                                        'recorded' => filter_var($data[5], FILTER_SANITIZE_STRING),
+                                        'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
+                                        'welcome' => filter_var($data[7], FILTER_SANITIZE_STRING),
                                     ));
                                 }
                             }
@@ -1104,15 +1119,19 @@ function bbb_admin_panel_upload_rooms() {
 
     } // End if manual save flag
 
-       $out .= '<form name="form_importing_bbb_rooms" enctype="multipart/form-data" method="post" action="">';
-       $out .= '<p>Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" /></p>';
-       // Put in a hidden flag. This helps differentiate between manual saves and auto-saves (in auto-saves, the file wouldn't be passed).
-       $out .= '<input type="hidden" name="xxxx_manual_save_flag" value="true" />';
-       $out .= '<p>Overwrite rooms with token repeated: <input type="checkbox" name="overwrite_rooms" value="True" /></p>';
-       $out .= '<p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Import" /></p>';
-       $out .= '</form>';
+    $out .= '<p>This feature is intended to bulk uploads, both update or create new rooms.</p>';
+    $out .= '<p>The format must be the same as the CSV file downloaded from room tables.</p>';
 
-       $out .= "<hr>";
+    $out .= '<form name="form_importing_bbb_rooms" enctype="multipart/form-data" method="post" action="">';
+    $out .= '<p>Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" /></p>';
+    // Put in a hidden flag. This helps differentiate between manual saves and auto-saves (in auto-saves, the file wouldn't be passed).
+    $out .= '<input type="hidden" name="xxxx_manual_save_flag" value="true" />';
+    $out .= '<p>Overwrite room settings if token already exists in database: <input type="checkbox" name="overwrite_rooms" value="True" /></p>';
+    $out .= '<p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Import" /></p>';
+    $out .= '<input type="hidden" name="nonce_upload_rooms" value="'.wp_create_nonce('bbb_admin_panel_upload_rooms').'" />';
+    $out .= '</form>';
+
+    $out .= "<hr>";
 
     return $out;
 }
@@ -1132,7 +1151,10 @@ function bbb_admin_panel_list_meetings() {
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
 
-    if( isset($_POST['SubmitList']) ) { //Creates then joins the meeting. If any problems occur the error is displayed
+    if( isset($_POST['SubmitList']) &&
+        isset( $_POST['nonce_delete_room']) &&
+        wp_verify_nonce( $_POST['nonce_delete_room'], 'bbb_admin_panel_list_meetings' )) { //Creates then joins the meeting. If any problems occur the error is displayed
+
         // Read the posted value and delete
         $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_STRING);
         $sql = "SELECT * FROM ".$table_name." WHERE meetingID = %s";
@@ -1152,7 +1174,7 @@ function bbb_admin_panel_list_meetings() {
             	$metadata = array(
             			'meta_origin' => 'WordPress',
             			'meta_originversion' => $wp_version,
-            			'meta_origintag' => 'wp_plugin-bigbluebutton '.BBB_ADMINISTRATION_PANEL_PLUGIN_VERSION,
+            			'meta_origintag' => 'wp_plugin-bbb_admin_panel_ '.BBB_ADMINISTRATION_PANEL_PLUGIN_VERSION,
             			'meta_originservername' => home_url(),
             			'meta_originservercommonname' => get_bloginfo('name'),
             			'meta_originurl' => $logouturl
@@ -1338,6 +1360,7 @@ function bbb_admin_panel_list_meetings() {
                   <input type="submit" name="SubmitList" class="button-primary" value="Join" />&nbsp;
                   <input type="submit" name="SubmitList" class="button-primary" value="End" onClick="return confirm(\'Are you sure you want to end the meeting?\')" />&nbsp;
                   <input type="submit" name="SubmitList" class="button-primary" value="Delete" onClick="return confirm(\'Are you sure you want to delete the meeting?\')" />
+                  <input type="hidden" name="nonce_delete_room" value="'.wp_create_nonce('bbb_admin_panel_list_meetings').'" />
                 </form>
                 </td>';
             } else {
@@ -1348,6 +1371,7 @@ function bbb_admin_panel_list_meetings() {
                   <!-- Meeting has ended and is temporarily unavailable. -->
                   <input type="submit" name="SubmitList" class="button-primary" value="Join" />&nbsp;
                   <input type="submit" name="SubmitList" class="button-primary" value="Delete" onClick="return confirm(\'Are you sure you want to delete the meeting?\')" />&nbsp;
+                  <input type="hidden" name="nonce_delete_room" value="'.wp_create_nonce('bbb_admin_panel_list_meetings').'" />
                 </form>
                 </td>';
             }
@@ -1489,7 +1513,10 @@ function bbb_admin_panel_list_active_meetings($args) {
         <script>
 
         jQuery(document).ready(function() {
-          var table_activity_monitor = jQuery("#activity_monitor").DataTable( {
+          var table_activity_monitor = jQuery("#activity_monitor").on( "error.dt", function ( e, settings, techNote, message ) {
+              console.log( "An error has been reported by DataTables: ", message );
+            } ).
+            DataTable( {
                 "autofill": true,
                 "dom": "lBfrtip",
                 "buttons": [
@@ -1557,11 +1584,15 @@ function bbb_admin_panel_list_active_meetings($args) {
 add_action( 'wp_ajax_bbbadminpanel_action_post_manage_recordings', 'bbbadminpanel_action_post_manage_recordings' );
 
 function bbbadminpanel_action_post_manage_recordings() {
-	global $wpdb; // this is how you get access to the database
+
+    if (!isset($_REQUEST['nonce_active_meetings']) ||
+            !wp_verify_nonce( $_REQUEST['nonce_active_meetings'], 'bbb_admin_panel_list_recordings' )) {
+        die( 'Security check' );
+    }
 
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
-    $action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_URL);
+    $action = filter_input(INPUT_GET, 'recordingAction', FILTER_SANITIZE_URL);
     $recordingID = filter_input(INPUT_GET, 'recordingID', FILTER_SANITIZE_URL);
 
     if (!$recordingID) {
@@ -1572,16 +1603,16 @@ function bbbadminpanel_action_post_manage_recordings() {
     switch ($action) {
         case "publish":
             $info = BigBlueButtonAPI::doPublishRecordings($recordingID, 'true', $url_val, $salt_val);
-        break;
+            break;
         case "unpublish":
             $info = BigBlueButtonAPI::doPublishRecordings($recordingID, 'false', $url_val, $salt_val);
-        break;
+            break;
         case "delete":
             $info = BigBlueButtonAPI::doDeleteRecordings($recordingID, $url_val, $salt_val);
-        break;
+            break;
         default:
-        header("HTTP/1.0 400 Bad Request. [action] unknown.");
-        wp_die();
+            header("HTTP/1.0 400 Bad Request. [action] unknown.");
+            wp_die();
     }
 
     $xmlResponse = simplexml_load_string ($info);
@@ -1680,6 +1711,7 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
             function actionCall(action, recordingid) {
 
                 action = (typeof action == \'undefined\') ? \'publish\' : action;
+                var nonce = "' . wp_create_nonce('bbb_admin_panel_list_recordings') . '";
 
                 if (action == \'publish\' || (action == \'delete\' && confirm("Are you sure to delete this recording?"))) {
                     if (action == \'publish\') {
@@ -1700,7 +1732,7 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
                         // Removes the line from the table
                         jQuery(document.getElementById(\'actionbar-tr-\'+ recordingid)).remove();
                     }
-                    actionurl = "' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/bbbadminpanel_action_post_manage_recordings?action=" + action + "&recordingID=" + recordingid;
+                    actionurl = ajaxurl + "?action=bbbadminpanel_action_post_manage_recordings&recordingAction=" + action + "&recordingID=" + recordingid + "&nonce_active_meetings=" + nonce;
                     jQuery.ajax({
                             url : actionurl,
                             async : false,

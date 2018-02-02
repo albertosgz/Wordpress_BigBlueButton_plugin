@@ -51,8 +51,8 @@ function bbb_admin_panel_wrap_simplexml_load_file($url) {
 
 	$response = wp_remote_get($url, $args);
 	if (is_wp_error ($response)) {
-		_log('error response after request to '.$url);
-		_log($response);
+		bbb_admin_panel_log('error response after request to '.$url);
+		bbb_admin_panel_log($response);
 		return false; // Bail early
 	}
 	$body = wp_remote_retrieve_body ($response);
@@ -384,11 +384,13 @@ class BigBlueButtonAPI {
 			echo '</meetings>';
 			return (ob_get_clean());
 		}
-        else if( $xml ) { //If the xml packet returned failure it displays the message to the user
-                return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
-        }
+        // else if( $xml ) { //If the xml packet returned failure it displays the message to the user
+        //     return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
+        // }
         else { //If the server is unreachable, then prompts the user of the necessary action
-                return false;
+			ob_start();
+			echo '<meetings></meetings>';
+			return (ob_get_clean());
         }
 	}
 
