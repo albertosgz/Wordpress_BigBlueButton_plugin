@@ -802,8 +802,6 @@ function bbb_admin_panel_permission_settings() {
             isset( $_POST['nonce_permissions']) &&
             wp_verify_nonce( $_POST['nonce_permissions'], 'bbb_admin_panel_permission_settings' )) {
 
-        check_admin_referer('bbb_admin_panel_permission_settings');
-
         foreach($roles as $key => $value) {
             if( !isset($_POST[$key.'-defaultRole']) ) {
                 if( $value == "Administrator" ) {
@@ -1329,6 +1327,7 @@ function bbb_admin_panel_list_meetings() {
             <td>'.$meeting->welcome.'</td>
             <td>
             <form name="form1" method="post" action="">
+              <input type="hidden" name="nonce_delete_room" value="'.wp_create_nonce('bbb_admin_panel_list_meetings').'" />
               <input type="hidden" name="meetingID" value="'.$meeting->meetingID.'">
               <input type="submit" name="SubmitList" class="button-primary" value="Join" />&nbsp;
               <input type="submit" name="SubmitList" class="button-primary" value="Delete" onClick="return confirm(\'Are you sure you want to delete the meeting?\')" />

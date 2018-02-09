@@ -212,7 +212,7 @@ class BigBlueButtonAPI {
 	*
 	*@return The url to end the specified meeting.
 	*/
-	public function getEndMeetingURL( $meetingID, $modPW, $URL, $SALT ) {
+	public static function getEndMeetingURL( $meetingID, $modPW, $URL, $SALT ) {
 		$base_url = $URL."api/end?";
 		$params = 'meetingID='.urlencode($meetingID).'&password='.urlencode($modPW);
 		return ( $base_url.$params.'&checksum='.sha1("end".$params.$SALT) );
