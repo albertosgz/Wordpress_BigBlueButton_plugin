@@ -3,8 +3,8 @@ Contributors: albertosgz
 Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
-Tested up to: 4.9.1
-Stable tag: 1.0
+Tested up to: 4.9.5
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -91,6 +91,13 @@ You should enable the curl extension in php.ini.
 6. Recordings in a front end page.
 
 == Changelog ==
+
+= 1.1.0 =
+* Added feature: [download template csv file](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/15).
+* Fixing [undefined index error](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/18)
+* Fixing [upload rooms file do not work](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/12)
+* Fixing [search feature do not work](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/11)
+* Fixing [error displaying active meetings table](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/10)
 
 = 1.0.0 =
 * Added the initial files.

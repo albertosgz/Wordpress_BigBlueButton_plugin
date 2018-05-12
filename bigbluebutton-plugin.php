@@ -859,16 +859,19 @@ function bbb_admin_panel_permission_settings() {
     </tr>';
 
     foreach($roles as $key => $value) {
-        $out .= '
-        <tr>
-        <td>'.$value.'</td>
-        <td><input type="checkbox" name="'.$key.'-manageRecordings" '.($permissions[$key]['manageRecordings']?'checked="checked"': '').' /></td>
-        <td><input type="checkbox" name="'.$key.'-participate" '.($permissions[$key]['participate']?'checked="checked"': '').' /></td>
-        <td><input type="radio" name="'.$key.'-defaultRole" value="moderator" '.($permissions[$key]['defaultRole']=="moderator"?'checked="checked"': '').' /></td>
-        <td><input type="radio" name="'.$key.'-defaultRole" value="attendee" '.($permissions[$key]['defaultRole']=="attendee"?'checked="checked"': '').' /></td>
-        <td><input type="radio" name="'.$key.'-defaultRole" value="none" '.($permissions[$key]['defaultRole']=="none"?'checked="checked"': '').' /></td>
-        <td><input type="checkbox" name="'.$key.'-listActiveMeetings" '.($permissions[$key]['listActiveMeetings']?'checked="checked"': '').' /></td>
-        </tr>';
+        if (isset($permissions[$key]) && isset($permissions[$key]['manageRecordings']) && isset($permissions[$key]['participate']) &&
+                isset($permissions[$key]['defaultRole']) && isset($permissions[$key]['listActiveMeetings'])) {
+            $out .= '
+            <tr>
+            <td>'.$value.'</td>
+            <td><input type="checkbox" name="'.$key.'-manageRecordings" '.($permissions[$key]['manageRecordings']?'checked="checked"': '').' /></td>
+            <td><input type="checkbox" name="'.$key.'-participate" '.($permissions[$key]['participate']?'checked="checked"': '').' /></td>
+            <td><input type="radio" name="'.$key.'-defaultRole" value="moderator" '.($permissions[$key]['defaultRole']=="moderator"?'checked="checked"': '').' /></td>
+            <td><input type="radio" name="'.$key.'-defaultRole" value="attendee" '.($permissions[$key]['defaultRole']=="attendee"?'checked="checked"': '').' /></td>
+            <td><input type="radio" name="'.$key.'-defaultRole" value="none" '.($permissions[$key]['defaultRole']=="none"?'checked="checked"': '').' /></td>
+            <td><input type="checkbox" name="'.$key.'-listActiveMeetings" '.($permissions[$key]['listActiveMeetings']?'checked="checked"': '').' /></td>
+            </tr>';
+        }
     }
 
     $out .= '
@@ -981,6 +984,39 @@ function bbb_admin_panel_create_meetings() {
 
 }
 
+add_action( 'wp_ajax_bbb_admin_panel_download_template_backup_file', 'bbb_admin_panel_download_template_backup_file' );
+
+const BBB_ADMINISTRATION_PANEL_TABLE_ROOMS_COLUMN_NAMES = [
+    'Meeting Room Name',
+    'Meeting Token',
+    'Attendee Password',
+    'Moderator Password',
+    'Wait for Moderator',
+    'Recorded',
+    'VoiceBridge',
+    'Welcome Message'
+];
+
+function bbb_admin_panel_download_template_backup_file() {
+
+    $filename = "backup_template.csv";
+    $array = [
+        BBB_ADMINISTRATION_PANEL_TABLE_ROOMS_COLUMN_NAMES
+    ];
+
+    header('Content-Type: application/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="'.$filename.'";');
+
+    // open the "output" stream
+    // see http://www.php.net/manual/en/wrappers.php.php#refsect2-wrappers.php-unknown-unknown-unknown-descriptioq
+    $f = fopen('php://output', 'w');
+    foreach ($array as $line) {
+        fputcsv($f, $line);
+    }
+    fclose($f);
+
+    wp_die();
+}
 
 function bbb_admin_panel_upload_rooms() {
     global $wpdb;
@@ -992,7 +1028,6 @@ function bbb_admin_panel_upload_rooms() {
 
     //Displays the title of the page
     $out .= "<h2>Restore database from backup CSV file</h2>";
-    $out .= "<p>Hint: The expected file is the output of the CSV file generated exporting the next List of Meeting Rooms table</p>";
 
     if(isset($_POST['xxxx_manual_save_flag']) &&
             isset( $_POST['nonce_upload_rooms']) &&
@@ -1030,17 +1065,8 @@ function bbb_admin_panel_upload_rooms() {
 
                     $row = 1;
                     $inserted = 0;
-                    $repeated = 0;
-                    $headers = [
-                        'Meeting Room Name',
-                        'Meeting Token',
-                        'Attendee Password',
-                        'Moderator Password',
-                        'Wait for Moderator',
-                        'Recorded',
-                        'VoiceBridge',
-                        'Welcome Message',
-                    ];
+                    $updated = 0;
+                    $headers = BBB_ADMINISTRATION_PANEL_TABLE_ROOMS_COLUMN_NAMES;
                     $table_name = bbb_admin_panel_get_db_table_name();
                     $listOfMeetings = [];
                     foreach($wpdb->get_results("SELECT meetingID FROM ".$table_name) as $value) {
@@ -1059,25 +1085,26 @@ function bbb_admin_panel_upload_rooms() {
                                 }
                             } else {
 
-                                $toInsert = true;
-                                if (in_array($data[1], $listOfMeetings)) {
-                                    $repeated++;
-                                    $toInsert = false;
-                                }
-                                if ($toInsert || $overwrite_rooms) {
+                                $existsRoom = in_array($data[1], $listOfMeetings);
 
-                                    $inserted += $wpdb->insert( $table_name, array(
-                                        'meetingID' => filter_var($data[1], FILTER_SANITIZE_STRING),
-                                        'meetingName' => filter_var($data[0], FILTER_SANITIZE_STRING),
-                                        'meetingVersion' => time(),
-                                        'attendeePW' => filter_var($data[2], FILTER_SANITIZE_STRING),
-                                        'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_STRING),
-                                        'waitForModerator' => filter_var($data[4], FILTER_SANITIZE_STRING),
-                                        'recorded' => filter_var($data[5], FILTER_SANITIZE_STRING),
-                                        'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
-                                        'welcome' => filter_var($data[7], FILTER_SANITIZE_STRING),
-                                    ));
+                                $meetingId = filter_var($data[1], FILTER_SANITIZE_STRING);
+                                $data = [
+                                    'meetingID' => $meetingId,
+                                    'meetingName' => filter_var($data[0], FILTER_SANITIZE_STRING),
+                                    'meetingVersion' => time(),
+                                    'attendeePW' => filter_var($data[2], FILTER_SANITIZE_STRING),
+                                    'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_STRING),
+                                    'waitForModerator' => filter_var($data[4], FILTER_VALIDATE_BOOLEAN),
+                                    'recorded' => filter_var($data[5], FILTER_VALIDATE_BOOLEAN),
+                                    'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
+                                    'welcome' => filter_var($data[7], FILTER_SANITIZE_STRING),
+                                ];
+                                if (!$existsRoom) {
+                                    $inserted += $wpdb->insert( $table_name, $data);
+                                } elseif ($existsRoom && $overwrite_rooms) {
+                                    $updated += $wpdb->update($table_name, $data, ['meetingID' => $meetingId]);
                                 }
+
                             }
                             $row++;
                         }
@@ -1086,7 +1113,12 @@ function bbb_admin_panel_upload_rooms() {
 
                     // Set the feedback flag to false, since the upload was successful
                     if (!$upload_feedback) {
-                        $upload_feedback = 'Uploaded ok<br />Readed '.($row-2).'<br />Inserted '.$inserted.'<br />Repeated '.$repeated.' (same token)<br />';
+                        $upload_feedback = '
+                            Uploaded ok<br />
+                            Readed '.($row-2).' rooms from CSV file.<br />
+                            Added '.$inserted.' new rooms to databse.<br />
+                            Updated '.$updated.' rooms from database (same Meeting Token).<br />
+                        ';
                     }
 
                 } else { // wp_handle_upload returned some kind of error. the return does contain error details, so you can use it here if you want.
@@ -1118,13 +1150,24 @@ function bbb_admin_panel_upload_rooms() {
     } // End if manual save flag
 
     $out .= '<p>This feature is intended to bulk uploads, both update or create new rooms.</p>';
-    $out .= '<p>The format must be the same as the CSV file downloaded from room tables.</p>';
+    $out .= '<p>The format must be the same as the CSV file downloaded from room tables (follow the next template file).</p>';
+    $out .= '<p>Click on the button to download a template file ready to fill up and upload it:
+        <a type="button"
+            href="'.admin_url('admin-ajax.php'). '?action=bbb_admin_panel_download_template_backup_file&nonce_download_template_backup_file='.wp_create_nonce('bbb_admin_panel_download_template_backup_file').'"
+            target="_blank"
+            class="button-primary"
+        >
+            Download backup template file
+        </a>
+    </p>';
 
     $out .= '<form name="form_importing_bbb_rooms" enctype="multipart/form-data" method="post" action="">';
     $out .= '<p>Upload a backup file (CSV format): <input type="file" name="xxxx_image" id="xxxx_image" /></p>';
     // Put in a hidden flag. This helps differentiate between manual saves and auto-saves (in auto-saves, the file wouldn't be passed).
     $out .= '<input type="hidden" name="xxxx_manual_save_flag" value="true" />';
-    $out .= '<p>Overwrite room settings if token already exists in database: <input type="checkbox" name="overwrite_rooms" value="True" /></p>';
+    $out .= '<p>Do you want to update the room if the Metting Token already exists in database? <input type="checkbox" name="overwrite_rooms" value="True" /><br />
+             Note: Can not exists two rooms with same Meeting Token, then if some row from csv file has same Meeting Token than a row from database, it will be updated or discarded according the previous checkbox.<br />
+             Hint: For boolean values, i.e. "Wait for Moderator" or "Recorded", set "yes" or "no".</p>';
     $out .= '<p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Import" /></p>';
     $out .= '<input type="hidden" name="nonce_upload_rooms" value="'.wp_create_nonce('bbb_admin_panel_upload_rooms').'" />';
     $out .= '</form>';
@@ -1812,11 +1855,23 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
             /// Prepare actionbar if role is allowed to manage the recordings
             if ( bbb_admin_panel_can_manageRecordings($role) ) {
                 $action = ($recording['published'] == 'true')? 'Hide': 'Show';
-                $actionbar = "<a id=\"actionbar-publish-a-".$recording['recordID']."\" title=\"".$action."\" href=\"#\"><img id=\"actionbar-publish-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."images/".strtolower($action).".gif\" class=\"iconsmall\" onClick=\"actionCall('publish', '".$recording['recordID']."'); return
- false;\" /></a>";
-                $actionbar .= "<a id=\"actionbar-delete-a-".$recording['recordID']."\" title=\"Delete\" href=\"#\"><img id=\"actionbar-delete-img-".$recording['recordID']."\" src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."images/delete.gif\" class=\"iconsmall\" onClick=\"actionCall('delete', '".$recording['recordID']."'); return false;\" /></a>";
-                $out .= '
-                <td>'.$actionbar.'</td>';
+                $actionbar = "
+                    <a id=\"actionbar-publish-a-".$recording['recordID']."\" title=\"".$action."\" href=\"#\">
+                        <img id=\"actionbar-publish-img-".$recording['recordID']."\"
+                            src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."images/".strtolower($action).".gif\"
+                            class=\"iconsmall\"
+                            onClick=\"actionCall('publish', '".$recording['recordID']."'); return false;\"
+                        />
+                    </a>";
+                $actionbar .= "
+                    <a id=\"actionbar-delete-a-".$recording['recordID']."\" title=\"Delete\" href=\"#\">
+                        <img id=\"actionbar-delete-img-".$recording['recordID']."\"
+                            src=\"".BBB_ADMINISTRATION_PANEL_PLUGIN_URL."images/delete.gif\"
+                            class=\"iconsmall\"
+                            onClick=\"actionCall('delete', '".$recording['recordID']."'); return false;\"
+                        />
+                    </a>";
+                $out .= '<td>'.$actionbar.'</td>';
             }
 
             $out .= '
