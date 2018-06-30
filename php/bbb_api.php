@@ -368,18 +368,21 @@ class BigBlueButtonAPI {
 	public static function getMeetings( $URL, $SALT ) {
         $url_request = BigBlueButtonAPI::getMeetingsURL( $URL, $SALT );
 		$xml = bbb_admin_panel_wrap_simplexml_load_file($url_request);
-		if( $xml && $xml->returncode == 'SUCCESS' ) {
-			if( (string)$xml->messageKey )
-				return ( $xml->message->asXML() );
+		if
+		(
+			$xml &&
+			$xml->returncode == 'SUCCESS' &&
+			$xml->messageKey != "noMeetings" &&
+			count( $xml->meetings ) &&
+			count( $xml->meetings->meeting )
+		) {
 			ob_start();
 			echo '<meetings>';
-			if( count( $xml->meetings ) && count( $xml->meetings->meeting ) ) {
-				foreach ($xml->meetings->meeting as $meeting)
-				{
-					echo '<meeting>';
-					echo BigBlueButtonAPI::getMeetingInfo($meeting->meetingID, $meeting->moderatorPW, $URL, $SALT);
-					echo '</meeting>';
-				}
+			foreach ($xml->meetings->meeting as $meeting)
+			{
+				echo '<meeting>';
+				echo BigBlueButtonAPI::getMeetingInfo($meeting->meetingID, $meeting->moderatorPW, $URL, $SALT);
+				echo '</meeting>';
 			}
 			echo '</meetings>';
 			return (ob_get_clean());
@@ -387,11 +390,11 @@ class BigBlueButtonAPI {
         // else if( $xml ) { //If the xml packet returned failure it displays the message to the user
         //     return array('returncode' => (string)$xml->returncode, 'message' => (string)$xml->message, 'messageKey' => (string)$xml->messageKey);
         // }
-        else { //If the server is unreachable, then prompts the user of the necessary action
-			ob_start();
-			echo '<meetings></meetings>';
-			return (ob_get_clean());
-        }
+        // else { //If the server is unreachable, then prompts the user of the necessary action
+		// 	ob_start();
+		// 	echo '<meetings></meetings>';
+		// 	return (ob_get_clean());
+        // }
 	}
 
 	/**

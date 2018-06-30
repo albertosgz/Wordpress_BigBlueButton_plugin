@@ -1484,8 +1484,14 @@ function bbbadminpanel_action_get_active_meetings() {
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
     $info = BigBlueButtonAPI::getMeetings( $url_val, $salt_val);
-    $meetings = simplexml_load_string ($info);
-    echo json_encode($meetings);
+    if ($info) {
+        $meetings = simplexml_load_string ($info);
+        echo json_encode($meetings);
+    } else {
+        echo json_encode([
+            'meeting' => []
+        ]);
+    }
 
 	wp_die(); // this is required to terminate immediately and return a proper response
 }
