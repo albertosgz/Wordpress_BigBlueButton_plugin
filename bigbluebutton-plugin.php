@@ -1066,6 +1066,7 @@ function bbb_admin_panel_upload_rooms() {
                     $row = 1;
                     $inserted = 0;
                     $updated = 0;
+                    $emptyTokenRows = [];
                     $headers = BBB_ADMINISTRATION_PANEL_TABLE_ROOMS_COLUMN_NAMES;
                     $table_name = bbb_admin_panel_get_db_table_name();
                     $listOfMeetings = [];
@@ -1088,21 +1089,25 @@ function bbb_admin_panel_upload_rooms() {
                                 $existsRoom = in_array($data[1], $listOfMeetings);
 
                                 $meetingId = filter_var($data[1], FILTER_SANITIZE_STRING);
-                                $data = [
-                                    'meetingID' => $meetingId,
-                                    'meetingName' => filter_var($data[0], FILTER_SANITIZE_STRING),
-                                    'meetingVersion' => time(),
-                                    'attendeePW' => filter_var($data[2], FILTER_SANITIZE_STRING),
-                                    'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_STRING),
-                                    'waitForModerator' => filter_var($data[4], FILTER_VALIDATE_BOOLEAN),
-                                    'recorded' => filter_var($data[5], FILTER_VALIDATE_BOOLEAN),
-                                    'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
-                                    'welcome' => filter_var($data[7], FILTER_SANITIZE_STRING),
-                                ];
-                                if (!$existsRoom) {
-                                    $inserted += $wpdb->insert( $table_name, $data);
-                                } elseif ($existsRoom && $overwrite_rooms) {
-                                    $updated += $wpdb->update($table_name, $data, ['meetingID' => $meetingId]);
+                                if ($meetingId) {
+                                    $data = [
+                                        'meetingID' => $meetingId,
+                                        'meetingName' => filter_var($data[0], FILTER_SANITIZE_STRING),
+                                        'meetingVersion' => time(),
+                                        'attendeePW' => filter_var($data[2], FILTER_SANITIZE_STRING),
+                                        'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_STRING),
+                                        'waitForModerator' => filter_var($data[4], FILTER_VALIDATE_BOOLEAN),
+                                        'recorded' => filter_var($data[5], FILTER_VALIDATE_BOOLEAN),
+                                        'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
+                                        'welcome' => filter_var($data[7], FILTER_SANITIZE_STRING),
+                                    ];
+                                    if (!$existsRoom) {
+                                        $inserted += $wpdb->insert( $table_name, $data);
+                                    } elseif ($existsRoom && $overwrite_rooms) {
+                                        $updated += $wpdb->update($table_name, $data, ['meetingID' => $meetingId]);
+                                    }
+                                } else {
+                                    $emptyTokenRows [] = $row;
                                 }
 
                             }
@@ -1119,6 +1124,10 @@ function bbb_admin_panel_upload_rooms() {
                             Added '.$inserted.' new rooms to databse.<br />
                             Updated '.$updated.' rooms from database (same Meeting Token).<br />
                         ';
+
+                        if ($emptyTokenRows) {
+                            $upload_feedback .= '<br />Error reading next row(s) because doesn\' set meeting token: ' . implode(', ', $emptyTokenRows) . '.<br /><br />';
+                        }
                     }
 
                 } else { // wp_handle_upload returned some kind of error. the return does contain error details, so you can use it here if you want.

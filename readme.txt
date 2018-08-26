@@ -4,7 +4,7 @@ Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
 Tested up to: 4.9.5
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,8 @@ This plugin integrates BigBlueButton functionality into Wordpress.
 * This plugin is a fork from the [BigBlueButton plugin](https://github.com/blindsidenetworks/bigbluebutton-integrations/tree/master/wordpress/bigbluebutton) released and maintained by <a href="http://blindsidenetworks.com/" target="_blank">Blindside Networks</a>.
 
 For more information on setting up your own BigBlueButton server or for using an external hosting provider visit [http://bigbluebutton.org/support](http://bigbluebutton.org/support "http://bigbluebutton.org/support").
+
+* The plugin does not store any private data. Only room settings to allow to starts multiconferences.
 
 == Installation ==
 
@@ -91,6 +93,9 @@ You should enable the curl extension in php.ini.
 6. Recordings in a front end page.
 
 == Changelog ==
+
+= 1.1.3 =
+* Avoid insertions of room with empty meeting token.
 
 = 1.1.0 =
 * Added feature: [download template csv file](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/15).
