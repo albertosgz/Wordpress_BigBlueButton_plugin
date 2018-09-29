@@ -95,8 +95,6 @@ function bbb_admin_panel_get_db_table_name_logs() {
     return $wpdb->prefix . BBB_ADMINISTRATION_PANEL_DB_LOGS_TABLE_NAME;
 }
 
-
-
 // Sessions are required by the plugin to work.
 function bbb_admin_panel_init() {
     bbb_admin_panel_init_sessions();
@@ -441,7 +439,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
             //Extra parameters
             $recorded = $found->recorded;
             if( $found->welcome ) {
-                $welcome = $found->welcome;
+                $welcome = html_entity_decode($found->welcome);
             } else {
                 $welcome = (isset($args['welcome']))? html_entity_decode($args['welcome']): BBB_ADMINISTRATION_PANEL_STRING_WELCOME;
             }
@@ -908,13 +906,13 @@ function bbb_admin_panel_create_meetings() {
             wp_verify_nonce( $_POST['nonce_create_meetings'], 'bbb_admin_panel_create_meetings' )) {
 
         /// Reads the posted values
-        $meetingName = htmlspecialchars(stripcslashes(filter_input(INPUT_POST, 'meetingName', FILTER_SANITIZE_STRING)));
+        $meetingName = filter_input(INPUT_POST, 'meetingName', FILTER_SANITIZE_STRING);
         $attendeePW = filter_input(INPUT_POST, 'attendeePW', FILTER_SANITIZE_STRING)? : bbb_admin_panel_generatePassword(6, 2);
         $moderatorPW = filter_input(INPUT_POST, 'moderatorPW', FILTER_SANITIZE_STRING)? : bbb_admin_panel_generatePassword(6, 2, $attendeePW);
         $voiceBridge = filter_input(INPUT_POST, 'voiceBridge', FILTER_SANITIZE_STRING)? : 0;
         $waitForModerator = (isset($_POST[ 'waitForModerator' ]) && $_POST[ 'waitForModerator' ] == 'True')? true: false;
         $recorded = (isset($_POST[ 'recorded' ]) && $_POST[ 'recorded' ] == 'True')? true: false;
-        $welcome = htmlspecialchars(stripcslashes(filter_input(INPUT_POST, 'welcome', FILTER_SANITIZE_STRING)));
+        $welcome = htmlentities(stripslashes($_POST['welcome']));
         $meetingVersion = time();
         /// Assign a random seed to generate unique ID on a BBB server
         $meetingID = bbb_admin_panel_generateToken();
@@ -951,7 +949,17 @@ function bbb_admin_panel_create_meetings() {
 
             //If the meeting doesn't exist in the wordpress database then create it
             if(!$alreadyExists) {
-                $rows_affected = $wpdb->insert( $table_name, array( 'meetingID' => $meetingID, 'meetingName' => $meetingName, 'meetingVersion' => $meetingVersion, 'attendeePW' => $attendeePW, 'moderatorPW' => $moderatorPW, 'waitForModerator' => $waitForModerator? 1: 0, 'recorded' => $recorded? 1: 0, 'voiceBridge' => $voiceBridge, 'welcome' => $welcome) );
+                $rows_affected = $wpdb->insert( $table_name, array(
+                    'meetingID' => $meetingID,
+                    'meetingName' => $meetingName,
+                    'meetingVersion' => $meetingVersion,
+                    'attendeePW' => $attendeePW,
+                    'moderatorPW' => $moderatorPW,
+                    'waitForModerator' => $waitForModerator? 1: 0,
+                    'recorded' => $recorded? 1: 0,
+                    'voiceBridge' => $voiceBridge,
+                    'welcome' => $welcome)
+                );
 
                 $out .= '<div class="updated">
                 <p>
@@ -1099,7 +1107,7 @@ function bbb_admin_panel_upload_rooms() {
                                         'waitForModerator' => filter_var($data[4], FILTER_VALIDATE_BOOLEAN),
                                         'recorded' => filter_var($data[5], FILTER_VALIDATE_BOOLEAN),
                                         'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
-                                        'welcome' => filter_var($data[7], FILTER_SANITIZE_STRING),
+                                        'welcome' => htmlentities(stripslashes($data[7])),
                                     ];
                                     if (!$existsRoom) {
                                         $inserted += $wpdb->insert( $table_name, $data);
@@ -1231,7 +1239,7 @@ function bbb_admin_panel_list_meetings() {
             	);
 
                 if( $found->welcome ) {
-                    $welcome = $found->welcome;
+                    $welcome = htmlspecialchars_decode($found->welcome);
                 } else {
             	    //Calls create meeting on the bigbluebutton server
             	    $welcome = BBB_ADMINISTRATION_PANEL_STRING_WELCOME;
@@ -1376,7 +1384,7 @@ function bbb_admin_panel_list_meetings() {
             <td>'.($meeting->waitForModerator? 'Yes': 'No').'</td>
             <td>'.($meeting->recorded? 'Yes': 'No').'</td>
             <td>'.$meeting->voiceBridge.'</td>
-            <td>'.$meeting->welcome.'</td>
+            <td>'.htmlspecialchars_decode($meeting->welcome).'</td>
             <td>
             <form name="form1" method="post" action="">
               <input type="hidden" name="nonce_delete_room" value="'.wp_create_nonce('bbb_admin_panel_list_meetings').'" />
@@ -1402,7 +1410,7 @@ function bbb_admin_panel_list_meetings() {
             <td>'.($meeting->waitForModerator? 'Yes': 'No').'</td>
             <td>'.($meeting->recorded? 'Yes': 'No').'</td>
             <td>'.$meeting->voiceBridge.'</td>
-            <td>'.$meeting->welcome.'</td>';
+            <td>'.htmlspecialchars_decode($meeting->welcome).'</td>';
             if( isset($info['hasBeenForciblyEnded']) && $info['hasBeenForciblyEnded']=='false') {
                 $out .= '
                 <td>
