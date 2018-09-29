@@ -2,14 +2,10 @@
 /*
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
-Description: BigBlueButton is an open source web conferencing system. This plugin integrates BigBlueButton into WordPress allowing bloggers to create and manage meeting rooms to interact with their readers. It was developed and is maintained by <a href="https://github.com/albertosgz/Wordpress_BigBlueButton_plugin" target="_blank">albertosgz's bigbluebutton plugin</a>. For more information on setting up your own BigBlueButton server or for using an external hosting provider visit <a href= "http://bigbluebutton.org/support" target="_blank">BigBlueButton support</a><br>
-This plugin is a fork based on <a href="https://wordpress.org/plugins/bigbluebutton/" target="_blank">Wordpress BigBlueButton plugin</a>.
-
-Versions:
-   1.0  --  Initial version written by blindsidenetworks
-   2.0  --  Author: Alberto Sanchez Gonzalez
-            Author URI: https://github.com/albertosgz
-
+Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
+Version: 1.1.4
+Author: Alberto Sanchez Gonzalez
+Author URI: https://github.com/albertosgz
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
