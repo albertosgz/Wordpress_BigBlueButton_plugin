@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.4
+Version: 1.1.5
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -978,7 +978,7 @@ function bbb_admin_panel_create_meetings() {
     <p>Voicebridge: <input type="number" name="voiceBridge" value="" size="5"> (recommented 5 digits)</p>
     <p>Wait for moderator to start meeting: <input type="checkbox" name="waitForModerator" value="True" /></p>
     <p>Recorded meeting: <input type="checkbox" name="recorded" value="True" /></p>
-    <p>Welcome message: <input type="text" name="welcome" value="" size="20"> (leave blank to default one)</p>
+    <p>Welcome message: <input type="text" name="welcome" value="" size="100"> (leave blank to default one)</p>
     <p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Create" /></p>
     <input type="hidden" name="nonce_create_meetings" value="'.wp_create_nonce('bbb_admin_panel_create_meetings').'" />
     </form>
