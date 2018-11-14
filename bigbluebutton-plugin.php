@@ -331,8 +331,7 @@ function bbb_admin_panel_recordings_shortcode($args) {
 }
 
 function bbb_admin_panel_active_meetings_shortcode($args) {
-  extract ($args);
-  return bbb_admin_panel_list_active_meetings($args);
+  return bbb_admin_panel_list_active_meetings();
 }
 
 
@@ -1510,7 +1509,7 @@ function bbbadminpanel_action_get_active_meetings() {
 }
 
 // Displays all the meetings running in the bigbluebutton server
-function bbb_admin_panel_list_active_meetings($args) {
+function bbb_admin_panel_list_active_meetings() {
 
     global $wpdb, $wp_version, $current_site, $current_user;
 
