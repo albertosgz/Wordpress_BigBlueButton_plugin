@@ -326,7 +326,7 @@ function bbb_admin_panel_shorcode($args) {
 function bbb_admin_panel_recordings_shortcode($args) {
     extract($args);
 
-    return bbb_admin_panel_list_recordings((isset($args['title']))? $args['title']: null, $args);
+    return bbb_admin_panel_list_recordings((isset($args['title'])? $args['title']: null), $args);
 
 }
 
@@ -1713,49 +1713,20 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
     $_SESSION['mt_bbb_url'] = $url_val;
     $_SESSION['mt_salt'] = $salt_val;
 
-    // filtering by meetingID/s
-    $meetingids_condition = '';
-	$meetingIDs = '';
 	if (isset($token) and trim($token) != '') {
         $tokens = $token;
     }
-    if (isset($tokens) and trim($tokens) != '') {
-		if ($tokens != 'only-current-wp')
-		{
-			$tokens_array = explode(',', $tokens);
-			foreach ($tokens_array as $tokens_element) {
-				if ($meetingids_condition == "") {
-					$meetingids_condition = "AND (meetingID='".$tokens_element."'";
-				}
-				else {
-					$meetingids_condition .= " OR meetingID='".$tokens_element."'";
-				}
-			}
-			$meetingids_condition .= ')';
-		}
-
-	    //Gets all the meetings from wordpress database
-		$sql_query = "SELECT DISTINCT meetingID FROM ".$table_logs_name." WHERE recorded = 1 ".$meetingids_condition." ORDER BY timestamp;";
-		$listOfMeetings = $wpdb->get_results($sql_query);
-
-		$listOfRecordings = Array();
-		if($listOfMeetings) {
-			foreach ($listOfMeetings as $meeting) {
-				if( $meetingIDs != '' ) $meetingIDs .= ',';
-				$meetingIDs .= $meeting->meetingID;
-			}
-		}
-    }
 
     $listOfRecordings = Array();
-	$recordingsArray = BigBlueButtonAPI::getRecordingsArray($meetingIDs, $url_val, $salt_val);
+	$recordingsArray = BigBlueButtonAPI::getRecordingsArray($tokens, $url_val, $salt_val);
+
 	if( $recordingsArray['returncode'] == 'SUCCESS' && !$recordingsArray['messageKey'] ) {
 		$listOfRecordings = $recordingsArray['recordings'];
 	}
 
     //Checks to see if there are no meetings in the wordpress db and if so alerts the user
     if(count($listOfRecordings) == 0) {
-        $out .= '<div class="updated"><p><strong>There are no recordings available. Or they are not generated from rooms setup by this plugin.</strong></p></div>';
+        $out .= '<div><p><strong>There are no recordings available. Or they are not generated from rooms setup by this plugin.</strong></p></div>';
         return $out;
     }
 
