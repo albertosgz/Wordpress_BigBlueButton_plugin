@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.6
+Version: 1.1.8
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -114,6 +114,9 @@ function bbb_admin_panel_init_scripts() {
         wp_enqueue_script('jquery');
     }
     wp_enqueue_script('DataTable', BBB_ADMINISTRATION_PANEL_PLUGIN_URL . '/DataTables/datatables.min.js');
+    wp_localize_script('DataTable', 'wp_ajax_tets_vars', array(
+        'ajaxurl' => admin_url( 'admin-ajax.php' )
+    ));
 }
 
 //Registers the plugin's stylesheet
@@ -1488,10 +1491,10 @@ function bbb_admin_panel_print_table_header() {
 //---------------------------------List Active Meetings----------------------------------
 //================================================================================
 
-add_action( 'wp_ajax_bbbadminpanel_action_get_active_meetings', 'bbbadminpanel_action_get_active_meetings' );
+add_action('wp_ajax_nopriv_bbbadminpanel_action_get_active_meetings', 'bbbadminpanel_action_get_active_meetings');
+add_action('wp_ajax_bbbadminpanel_action_get_active_meetings', 'bbbadminpanel_action_get_active_meetings');
 
 function bbbadminpanel_action_get_active_meetings() {
-	global $wpdb; // this is how you get access to the database
 
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
@@ -1511,12 +1514,12 @@ function bbbadminpanel_action_get_active_meetings() {
 // Displays all the meetings running in the bigbluebutton server
 function bbb_admin_panel_list_active_meetings() {
 
-    global $wpdb, $wp_version, $current_site, $current_user;
+    global $wpdb, $wp_version, $current_site;
 
     // check permissions
     if (!bbb_admin_panel_can_listActiveMeetings())
     {
-        return $current_user." users are not allowed to list active meetings";
+        return "current user are not allowed to list active meetings";
     }
 
     //Displays the title of the page
@@ -1529,7 +1532,8 @@ function bbb_admin_panel_list_active_meetings() {
     $meetings = simplexml_load_string ($info);
 
     if(!$info)
-    {//If the server is unreachable, then prompts the user of the necessary action
+    {
+        //If the server is unreachable, then prompts the user of the necessary action
         $out .= '<div class="updated"><p><strong>Unable to display the meetings. Please check the url of the bigbluebutton server AND check to see if the bigbluebutton server is running.</strong></p></div>';
     }
     else if( $meetings['returncode'] == 'FAILED' && $meetings['messageKey'] != 'notFound' && $meetings['messageKey'] != 'invalidPassword')
@@ -1601,7 +1605,7 @@ function bbb_admin_panel_list_active_meetings() {
                 "deferRender": true,
                 "ajax": {
                     "dataType": "json",
-                    "url": "admin-ajax.php",
+                    "url": wp_ajax_tets_vars.ajaxurl,
                     "cache": "false",
                     "dataSrc": "meeting",
                     "data": function ( d ) {
