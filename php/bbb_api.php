@@ -629,10 +629,11 @@ class BigBlueButtonAPI {
 	*/
 	public static function getMeetingXML( $meetingID, $URL, $SALT ) {
 		$xml = bbb_admin_panel_wrap_simplexml_load_file( BigBlueButtonAPI::getIsMeetingRunningURL( $meetingID, $URL, $SALT ) );
-		if( $xml && $xml->returncode == 'SUCCESS')
-			return ( str_replace('</response>', '', str_replace("<?xml version=\"1.0\"?>\n<response>", '', $xml->asXML())));
-		else
+		if( $xml && $xml->returncode == 'SUCCESS') {
+			return $xml;
+		} else {
 			return 'false';
+		}
 	}
 
 }

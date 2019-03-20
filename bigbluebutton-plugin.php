@@ -614,7 +614,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
 
 //Displays the javascript that handles redirecting a user, when the meeting has started
 //the meetingName is the meetingID
-add_action( 'wp_ajax_bbbadminpanel_action_display_redirect_script', 'bbbadminpanel_action_display_redirect_script' );
+add_action( 'wp_ajax_nopriv_bbbadminpanel_action_display_redirect_script', 'bbbadminpanel_action_display_redirect_script' );
 
 function bbbadminpanel_action_display_redirect_script() {
 	global $wpdb; // this is how you get access to the database
@@ -629,9 +629,15 @@ function bbbadminpanel_action_display_redirect_script() {
     }
 
     $info = BigBlueButtonAPI::getMeetingXML( $meetingID, $url_val, $salt_val );
-
-    $xmlResponse = simplexml_load_string ($info);
-    echo json_encode($xmlResponse);
+    if (isset($info->running)) {
+        echo json_encode([
+            'running' => (string) $info->running
+        ]);
+    } else {
+        echo json_encode([
+            'error' => 'something happened with BBB connection'
+        ]);
+    }
 
 	wp_die(); // this is required to terminate immediately and return a proper response
 }
@@ -641,12 +647,15 @@ function bbb_admin_panel_display_redirect_script($bigbluebutton_joinURL, $meetin
     <script type="text/javascript">
         function bigbluebutton_ping() {
             jQuery.ajax({
-                url : "' . BBB_ADMINISTRATION_PANEL_PLUGIN_URL. '/bbbadminpanel_action_display_redirect_script?action=ping&meetingID=' . urlencode($meetingID) . '",
+                url: wp_ajax_tets_vars.ajaxurl,
+                data: {
+                    "action": "bbbadminpanel_action_display_redirect_script",
+                    "meetingID": "'.urlencode($meetingID).'"
+                },
                 async : true,
-                dataType : "xml",
-                success : function(xmlDoc) {
-                    $xml = jQuery( xmlDoc ), $running = $xml.find( "running" );
-                    if($running.text() == "true") {
+                dataType : "json",
+                success : function(response) {
+                    if(response.running == "true") {
                         window.location = "'.$bigbluebutton_joinURL.'";
                     }
                 },
@@ -657,7 +666,7 @@ function bbb_admin_panel_display_redirect_script($bigbluebutton_joinURL, $meetin
 
         }
 
-        setInterval("bigbluebutton_ping()", 60000);
+        setInterval("bigbluebutton_ping()", 15000);
     </script>';
 
     $out .= '
