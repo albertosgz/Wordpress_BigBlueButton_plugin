@@ -1654,6 +1654,7 @@ function bbb_admin_panel_list_active_meetings() {
 //================================================================================
 // Displays all the recordings available in the bigbluebutton server
 
+add_action( 'wp_ajax_nopriv_bbbadminpanel_action_post_manage_recordings', 'bbbadminpanel_action_post_manage_recordings' );
 add_action( 'wp_ajax_bbbadminpanel_action_post_manage_recordings', 'bbbadminpanel_action_post_manage_recordings' );
 
 function bbbadminpanel_action_post_manage_recordings() {
@@ -1776,9 +1777,14 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
                         // Removes the line from the table
                         jQuery(document.getElementById(\'actionbar-tr-\'+ recordingid)).remove();
                     }
-                    actionurl = ajaxurl + "?action=bbbadminpanel_action_post_manage_recordings&recordingAction=" + action + "&recordingID=" + recordingid + "&nonce_active_meetings=" + nonce;
                     jQuery.ajax({
-                            url : actionurl,
+                            url: wp_ajax_tets_vars.ajaxurl,
+                            data: {
+                                "action": "bbbadminpanel_action_post_manage_recordings",
+                                "recordingAction": action,
+                                "recordingID": recordingid,
+                                "nonce_active_meetings": nonce,
+                            },
                             async : false,
                             success : function(response) {
                                 alert("deleted ok");
