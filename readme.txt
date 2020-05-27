@@ -3,8 +3,8 @@ Contributors: albertosgz
 Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
-Tested up to: 4.9.5
-Stable tag: 1.1.8
+Tested up to: 5.4
+Stable tag: 1.1.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,25 @@ You should enable the curl extension in php.ini.
 6. Recordings in a front end page.
 
 == Changelog ==
+
+= 1.1.13 = 
+* Feature to change the Widget title
+
+= 1.1.12 =
+* Fixed security bug which allow people to analyze ajax request to get moderator and attendee password
+* Fixed enforce min 5 digits in VoiceBridge field (https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/23)
+* Fixed display active meetings with only one meeting (https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/22)
+* Changed to more friendly message when no active meetings available
+
+= 1.1.11 =
+Tested plugin with Wordpress version 5.4
+
+= 1.1.10 =
+* Typo in commit
+
+= 1.1.9 =
+* Fixed redirect user from form once moderator logged into room
+* Fixed to remove recordings from table when is displayed in public side
 
 = 1.1.8 =
 * Fixed Activity Monitor from public pages
