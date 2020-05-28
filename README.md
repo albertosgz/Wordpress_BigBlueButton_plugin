@@ -64,7 +64,7 @@ After install and activate it, next shorcodes are available. Each shortcode has 
 	```
 
 
-- bigbluebutton_active_meetings
+- `bigbluebutton_active_meetings`
 
   Display a table with all active meetings in the BBB server.
 
@@ -75,6 +75,29 @@ After install and activate it, next shorcodes are available. Each shortcode has 
   Example:
     ```
     [bigbluebutton_active_meetings]
+    ```
+
+- `bigbluebutton_room_status`
+
+  Display status of a room.
+
+  Intended to use to know when a room is available to join. Is fully customizable.
+
+  Options
+    - `token`
+    Meeting id of the room to check (mandatory). The token of a room is the value of the column `token` of the table of rooms.
+    - `class`
+    CSS class to apply. The word displayed is within an `span` tag.
+    - `active`
+    Word to display instead of `active`. Intended to be used to translate the default word.
+    - `inactive`
+    Word to display instead of `inactive`. Intended to be used to translate the default word.
+    - `period`
+    Period in milliseconds to check status. By default is 1500ms.
+
+  Example:
+    ```
+    [bigbluebutton_room_status token=46c7600b-5780-45e3-95dd-67bfb06c65f3 class=bbb-room-status active=activo inactive="sala inactiva" period=5000]
     ```
 
 ### Widget

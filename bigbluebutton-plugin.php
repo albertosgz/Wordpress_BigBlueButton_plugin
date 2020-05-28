@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.13
+Version: 1.1.14
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -65,6 +65,7 @@ register_uninstall_hook(__FILE__, 'bbb_admin_panel_uninstall' ); //Runs the unin
 add_shortcode('bigbluebutton', 'bbb_admin_panel_shorcode');
 add_shortcode('bigbluebutton_recordings', 'bbb_admin_panel_recordings_shortcode');
 add_shortcode('bigbluebutton_active_meetings', 'bbb_admin_panel_active_meetings_shortcode');
+add_shortcode('bigbluebutton_room_status', 'bbb_admin_panel_room_status_shortcode');
 
 //action definitions
 add_action('init', 'bbb_admin_panel_init');
@@ -337,6 +338,14 @@ function bbb_admin_panel_active_meetings_shortcode($args) {
   return bbb_admin_panel_list_active_meetings();
 }
 
+function bbb_admin_panel_room_status_shortcode($args) {
+    $token = $args['token'] ?? null;
+    $class = $args['class'] ?? null;
+    $active = $args['active'] ?? null;
+    $inactive = $args['inactive'] ?? null;
+    $period = $args['period'] ?? null; // in seconds
+    return bbb_admin_panel_room_status($token, $class, $active, $inactive, $period);
+}
 
 //================================================================================
 //---------------------------------Widget-----------------------------------------
@@ -1667,6 +1676,71 @@ function bbb_admin_panel_list_active_meetings() {
     return $out;
 }
 
+function bbb_admin_panel_room_status($meetingId, $class, $activeWord, $inactiveWord, $period) {
+    $url_val = get_option('bbb_admin_panel_url');
+    $salt_val = get_option('bbb_admin_panel_salt');
+    $info = bbb_admin_panel_get_meeting($meetingId);
+    if (!$info || $info === 'false') {
+        return '<strong>No meeting found for ID '.$meetingId.'</strong>';
+    }
+
+    return '
+        <!-- Status displayed -->
+        <span id="bbb_status_room_field" ' . ($class ? "class=\"$class\"" : '') . '>...</span>
+
+        <!-- Javascript code -->
+        <script>
+            field = document.getElementById("bbb_status_room_field");
+            function checkRoomStatus() {
+                jQuery.ajax({
+                    url: wp_ajax_tets_vars.ajaxurl,
+                    data: {
+                        "action": "bbbadminpanel_action_room_status_script",
+                        "meetingId": "'.urlencode($meetingId).'"
+                    },
+                    async : true,
+                    dataType : "json",
+                    success : function(response) {
+                        if(response.running) {
+                            field.innerHTML = "' . ($activeWord ? $activeWord : 'Active') .'";
+                        } else {
+                            field.innerHTML = "' . ($inactiveWord ? $inactiveWord : 'Inactive') . '";
+                        }
+                        console.log("[bbb_admin_panel_room_status] Checked meeting ' . $meetingId . ' status: ", response.running);
+                    },
+                    error : function(xmlHttpRequest, status, error) {
+                        console.error("[bbb_admin_panel_room_status]", xmlHttpRequest, status, error);
+                    }
+                });
+            };
+            var interval = window.setInterval(checkRoomStatus, ' . ($period ?? 1500) . ');
+            checkRoomStatus(); // Run once now            
+        </script>
+    ';
+}
+
+add_action( 'wp_ajax_nopriv_bbbadminpanel_action_room_status_script', 'bbbadminpanel_action_room_status_script' );
+add_action( 'wp_ajax_bbbadminpanel_action_room_status_script', 'bbbadminpanel_action_room_status_script' );
+
+function bbbadminpanel_action_room_status_script() {
+
+    $url_val = get_option('bbb_admin_panel_url');
+    $salt_val = get_option('bbb_admin_panel_salt');
+    $meetingID = filter_input(INPUT_GET, 'meetingId', FILTER_SANITIZE_URL);
+
+    $info = BigBlueButtonAPI::getMeetingXML( $meetingID, $url_val, $salt_val );
+    if (!$info || $info === 'false') {
+        echo json_encode([
+            'running' => false,
+        ]);
+    }
+    echo json_encode([
+        'running' => (string) $info->running === 'true' ? true : false,
+    ]);
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 //================================================================================
 //---------------------------------List Recordings----------------------------------
 //================================================================================
@@ -2055,4 +2129,13 @@ function bbb_admin_panel_secToDuration($duration) {
   $minutes = $duration % 60;
   $hours = $duration / 60;
   return $hours.' '.$minutes.' '.$secs;
+}
+
+function bbb_admin_panel_get_meeting($meetingId) {
+    global $wpdb;
+    $table_name = bbb_admin_panel_get_db_table_name();
+    $rows = $wpdb->get_results("SELECT * FROM $table_name");
+    if (count($rows) > 0) {
+        return $rows [0];
+    }
 }
