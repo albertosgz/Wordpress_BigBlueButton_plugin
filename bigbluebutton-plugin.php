@@ -336,7 +336,7 @@ function bbb_admin_panel_recordings_shortcode($args) {
 }
 
 function bbb_admin_panel_active_meetings_shortcode($args) {
-  return bbb_admin_panel_list_active_meetings();
+  return bbb_admin_panel_list_active_meetings(false); // false => no tooltips of participants in public view
 }
 
 function bbb_admin_panel_room_status_shortcode($args) {
@@ -729,7 +729,7 @@ function bbb_admin_panel_general_options() {
 
         echo bbb_admin_panel_list_recordings('List of Recordings', null);
 
-        echo bbb_admin_panel_list_active_meetings();
+        echo bbb_admin_panel_list_active_meetings(true); // true => display participants in admin view
     }
 
 }
@@ -1545,8 +1545,23 @@ function bbbadminpanel_action_get_active_meetings() {
 	wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+add_action('wp_ajax_bbbadminpanel_action_get_meeting_info', 'bbbadminpanel_action_get_meeting_info');
+
+function bbbadminpanel_action_get_meeting_info() {
+
+    $url_val = get_option('bbb_admin_panel_url');
+    $salt_val = get_option('bbb_admin_panel_salt');
+    $meetingID = filter_input(INPUT_GET, 'meetingId', FILTER_SANITIZE_URL);
+    $meeting = bbb_admin_panel_wrap_simplexml_load_file( 
+        BigBlueButtonAPI::getMeetingInfoURLWithoutModeratorPwUrl($meetingID, $url_val, $salt_val) 
+    );
+    echo json_encode($meeting);
+
+	wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 // Displays all the meetings running in the bigbluebutton server
-function bbb_admin_panel_list_active_meetings() {
+function bbb_admin_panel_list_active_meetings($tooltipParticipants) {
 
     global $wpdb, $wp_version, $current_site;
 
@@ -1584,6 +1599,7 @@ function bbb_admin_panel_list_active_meetings() {
     { /// The meeting exists in the bigbluebutton server
 
         $out = "<h2>List of Active Meeting Rooms in BBB Server</h2>";
+        $out .= "Click on the row to see the participants list";
 
         $out .= '
         </tbody>
@@ -1611,64 +1627,108 @@ function bbb_admin_panel_list_active_meetings() {
         <script>
 
         jQuery(document).ready(function() {
-          var table_activity_monitor = jQuery("#activity_monitor").on( "error.dt", function ( e, settings, techNote, message ) {
-              console.log( "An error has been reported by DataTables: ", message );
-            } ).
-            DataTable( {
-                "autofill": true,
-                "dom": "lBfrtip",
-                "buttons": [
-                    "copyHtml5",
-                    "excelHtml5",
-                    "csvHtml5",
-                    "pdfHtml5",
-                    {
-                        text: "Reload table",
-                        action: function () {
-                            table_activity_monitor.ajax.reload(null, false);
+            var table_activity_monitor = jQuery("#activity_monitor")
+                .on( "error.dt", function ( e, settings, techNote, message ) {
+                    console.log( "An error has been reported by DataTables: ", message );
+                } )
+                .DataTable( {
+                    "autofill": true,
+                    "dom": "lBfrtip",
+                    "buttons": [
+                        "copyHtml5",
+                        "excelHtml5",
+                        "csvHtml5",
+                        "pdfHtml5",
+                        {
+                            text: "Reload table",
+                            action: function () {
+                                table_activity_monitor.ajax.reload(null, false);
+                            }
                         }
-                    }
-                ],
-                fixedColumns:   {
-                    leftColumns: 1
-                },
-                responsive: true,
-                rowReorder: true,
-                "scrollX": true,
-                "lengthMenu": [ 10, 25, 50, 100 ],
-                "deferRender": true,
-                "ajax": {
-                    "dataType": "json",
-                    "url": wp_ajax_tets_vars.ajaxurl,
-                    "cache": "false",
-                    "dataSrc": "meeting",
-                    "data": function ( d ) {
-                        return jQuery.extend( {}, d, {
-                            "action": "bbbadminpanel_action_get_active_meetings"
-                        } );
-                    }
-                },
-                "columns": [
-                    { "data": "meetingID" },
-                    { "data": "meetingName" },
-                    { "data": "voiceBridge" },
-                    { "data": "createDate" },
-                    { "data": "participantCount" }
-                ],
-                "columnDefs": [
-                    { targets: "_all", "defaultContent": "<i>Not set</i>", }
-                ],
-                "language": {
-                    "emptyTable": "No active meetings in BBB server currently",
-                }
-          } );
+                    ],
+                    fixedColumns:   {
+                        leftColumns: 1
+                    },
+                    responsive: true,
+                    rowReorder: true,
+                    "scrollX": true,
+                    "lengthMenu": [ 10, 25, 50, 100 ],
+                    "deferRender": true,
+                    "ajax": {
+                        "dataType": "json",
+                        "url": wp_ajax_tets_vars.ajaxurl,
+                        "cache": "false",
+                        "dataSrc": "meeting",
+                        "data": function ( d ) {
+                            return jQuery.extend( {}, d, {
+                                "action": "bbbadminpanel_action_get_active_meetings"
+                            } );
+                        }
+                    },
+                    "columns": [
+                        { "data": "meetingID" },
+                        { "data": "meetingName" },
+                        { "data": "voiceBridge" },
+                        { "data": "createDate" },
+                        { "data": "participantCount" }
+                    ],
+                    "columnDefs": [
+                        { targets: "_all", "defaultContent": "<i>Not set</i>", }
+                    ],
+                    "language": {
+                        "emptyTable": "No active meetings in BBB server currently",
+                    },
+                } );
 
-          // refresh table each 30 seconds
-          setInterval( function () {
-            table_activity_monitor.ajax.reload( null, false ); // user paging is not reset on reload
-        }, 30000 );
+                // refresh table each 30 seconds
+                setInterval( function () {
+                    table_activity_monitor.ajax.reload( null, false ); // user paging is not reset on reload
+                }, 30000 );';
+                if ($tooltipParticipants) {
+                    $out .= 
+                    'jQuery("#activity_monitor tbody").on("click", "tr", function () {
+                        var data = table_activity_monitor.row( this ).data();
+                        jQuery.ajax({
+                            "url": wp_ajax_tets_vars.ajaxurl,
+                            "dataType": "json",
+                            "cache": "false",
+                            "dataSrc": "meeting",
+                            "data": {
+                                "action": "bbbadminpanel_action_get_meeting_info",
+                                "meetingId": data.meetingID,
+                            },
+                            success: function(data) {
+                                if (data.returncode === "SUCCESS") {
+                                    const at = [];
+                                    if (typeof data.attendees === "object") {
+                                        at.push({
+                                            name: data.attendees.attendee.fullName,
+                                            role: data.attendees.attendee.role,
+                                        });
+                                    } else {
+                                        data.attendees.forEach(attendee => {
+                                            at.push({
+                                                name: attendee.fullName,
+                                                role: attendee.role,
+                                            });
+                                        });
+                                    }
+                                    alert( 
+                                        "Participants (# - Name - Role): \n"+
+                                        at.map((a, i) => (i+1)+": "+a.name+" ("+a.role.toLowerCase()+")\n") 
+                                    );
+                                }
 
-        });
+                            },
+                            error: function(xhr) {
+                                console.error(xhr);
+                            } 
+                        });
+                    } );';
+            }
+            $out .= '
+             
+            }); // End JQuery ready
 
         </script>
         </div><hr />';

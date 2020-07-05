@@ -34,7 +34,7 @@ function bbb_admin_panel_wrap_simplexml_load_file($url) {
 
 	// global $wp_version;
 	$args = array(
-	    'timeout'     => 30,
+	    'timeout'     => 180,
 	    // 'redirection' => 5,
 	    // 'httpversion' => '1.0',
 	    // 'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
@@ -183,6 +183,13 @@ class BigBlueButtonAPI {
 	public static function getMeetingInfoURL( $meetingID, $modPW, $URL, $SALT ) {
 		$base_url = $URL."api/getMeetingInfo?";
 		$params = 'meetingID='.urlencode($meetingID).'&password='.urlencode($modPW);
+		return ( $base_url.$params.'&checksum='.sha1("getMeetingInfo".$params.$SALT));
+	}
+
+	// Same as before but without the Moderator Password requirement.
+	public static function getMeetingInfoURLWithoutModeratorPwUrl( $meetingID, $URL, $SALT ) {
+		$base_url = $URL."api/getMeetingInfo?";
+		$params = 'meetingID='.urlencode($meetingID);
 		return ( $base_url.$params.'&checksum='.sha1("getMeetingInfo".$params.$SALT));
 	}
 
