@@ -1880,7 +1880,15 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
     $_SESSION['mt_bbb_url'] = $url_val;
     $_SESSION['mt_salt'] = $salt_val;
 
-	if (isset($token) and trim($token) != '') {
+    if (isset($token) and trim($token) == 'only-current-wp') {
+        $tokens = '';
+        foreach ($wpdb->get_results("SELECT meetingID FROM ".$table_name." ORDER BY meetingName") as $meeting) {
+            $tokens .= ',' . $meeting->meetingID;
+        }
+        if ($tokens != '') {
+            $tokens = substr($tokens, 1);
+        }
+    } else if (isset($token) and trim($token) != '') {
         $tokens = $token;
     }
 
