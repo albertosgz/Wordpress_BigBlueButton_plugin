@@ -17,6 +17,8 @@ After install and activate it, next shorcodes are available. Each shortcode has 
     Meeting IDs to display, separated by commas (incompatible with `token` option)
     - `submit`
     Text to display in the button
+    - `class`
+    Custom CSS class to attach to form
 
   Example:
     ```

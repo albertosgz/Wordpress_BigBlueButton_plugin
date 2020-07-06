@@ -372,6 +372,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
     $token = isset($args['token']) ?$args['token']: null;
     $tokens = isset($args['tokens']) ?$args['tokens']: null;
     $submit = isset($args['submit']) ?$args['submit']: null;
+    $customClass = isset($args['class']) ?$args['class']: null;
 
     //Initializes the variable that will collect the output
     $out = '';
@@ -529,7 +530,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
 
         if ( bbb_admin_panel_can_participate($role) ) {
             $out .= '
-            <form id="bbb-join-form'.($bigbluebutton_form_in_widget?'-widget': '').'" class="bbb-join" name="form1" method="post" action="">';
+            <form id="bbb-join-form'.($bigbluebutton_form_in_widget?'-widget': '').'" class="bbb-join '.($customClass ? $customClass : '').'" name="form1" method="post" action="">';
 
             if(sizeof($listOfMeetings) > 1 && !$token ) {
                 if( isset($tokens) && trim($tokens) != '' ) {
