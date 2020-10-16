@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.17
+Version: 1.1.18
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -221,7 +221,7 @@ function bbb_admin_panel_install () {
 
 }
 
-function bigbluebutton_update() {
+function bbb_admin_panel_update() {
     global $wpdb;
 
     $newColumnName = 'api_join_custom_parameters';
