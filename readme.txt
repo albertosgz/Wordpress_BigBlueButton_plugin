@@ -4,7 +4,7 @@ Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
 Tested up to: 5.4
-Stable tag: 1.1.15
+Stable tag: 1.1.17
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -95,6 +95,14 @@ You should enable the curl extension in php.ini.
 6. Recordings in a front end page.
 
 == Changelog ==
+
+= 1.1.17 =
+* Added support for custom parameters in join api call
+
+= 1.1.16 =
+* Added dialog to know current participants in a room, clickin on row of active meetings.
+* Fix 'only-current-wp' as token in the table of meeting recordings.
+* Added parameter to join shortcode to add a custom CSS class.
 
 = 1.1.14 =
 * Feature add shortcode bigbluebutton_room_status to display status of a room

@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.15
+Version: 1.1.17
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -221,8 +221,19 @@ function bbb_admin_panel_install () {
 
 }
 
-function bbb_admin_panel_update() {
-    return true;
+function bigbluebutton_update() {
+    global $wpdb;
+
+    $newColumnName = 'api_join_custom_parameters';
+    $table_name = bbb_admin_panel_get_db_table_name();
+    $row = $wpdb->get_results("
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE table_name = '$table_name' AND column_name = '$newColumnName'
+    ");
+
+    if(empty($row)){
+        $wpdb->query("ALTER TABLE $table_name ADD $newColumnName TEXT NULL");
+    }
 }
 
 function bbb_admin_panel_uninstall () {
@@ -274,6 +285,7 @@ function bbb_admin_panel_init_database() {
     recorded BOOLEAN NOT NULL DEFAULT FALSE,
     voiceBridge text NOT NULL,
     welcome text NOT NULL,
+    api_join_custom_parameters TEXT NULL,
     UNIQUE KEY id (id)
     );";
     dbDelta($sql);
@@ -492,7 +504,9 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
                     $rows_affected = $wpdb->insert( $table_logs_name, array( 'meetingID' => $found->meetingID, 'recorded' => $found->recorded, 'timestamp' => time(), 'event' => 'Create' ) );
                 }
 
-                $bigbluebutton_joinURL = BigBlueButtonAPI::getJoinURL($found->meetingID, $name, $password, $salt_val, $url_val );
+                $customParameters = explode('|', $found->api_join_custom_parameters);
+
+                $bigbluebutton_joinURL = BigBlueButtonAPI::getJoinURL($found->meetingID, $name, $password, $salt_val, $url_val, $customParameters );
                 //If the meeting is already running or the moderator is trying to join or a viewer is trying to join and the
                 //do not wait for moderator option is set to false then the user is immediately redirected to the meeting
                 if ( (BigBlueButtonAPI::isMeetingRunning( $found->meetingID, $url_val, $salt_val ) && ($found->moderatorPW == $password || $found->attendeePW == $password ) )
@@ -938,6 +952,7 @@ function bbb_admin_panel_create_meetings() {
         $waitForModerator = (isset($_POST[ 'waitForModerator' ]) && $_POST[ 'waitForModerator' ] == 'True')? true: false;
         $recorded = (isset($_POST[ 'recorded' ]) && $_POST[ 'recorded' ] == 'True')? true: false;
         $welcome = htmlentities(stripslashes($_POST['welcome']));
+        $apiJoinCustomParameters = htmlentities(stripslashes($_POST['api_join_custom_parameters']));
         $meetingVersion = time();
         /// Assign a random seed to generate unique ID on a BBB server
         $meetingID = bbb_admin_panel_generateToken();
@@ -983,8 +998,9 @@ function bbb_admin_panel_create_meetings() {
                     'waitForModerator' => $waitForModerator? 1: 0,
                     'recorded' => $recorded? 1: 0,
                     'voiceBridge' => $voiceBridge,
-                    'welcome' => $welcome)
-                );
+                    'welcome' => $welcome,
+                    'api_join_custom_parameters' => $apiJoinCustomParameters,
+                ));
 
                 $out .= '<div class="updated">
                 <p>
@@ -1008,6 +1024,7 @@ function bbb_admin_panel_create_meetings() {
     <p>Wait for moderator to start meeting: <input type="checkbox" name="waitForModerator" value="True" /></p>
     <p>Recorded meeting: <input type="checkbox" name="recorded" value="True" /></p>
     <p>Welcome message: <input type="text" name="welcome" value="" size="100"> (leave blank to default one)</p>
+    <p>Join Custom Parameters: <input type="text" name="api_join_custom_parameters" value="" size="100">Custom parameters, separated by \'|\', i.e.: logo=foo|userdata-bbb_custom_style=bar</p>
     <p class="submit"><input type="submit" name="SubmitCreate" class="button-primary" value="Create" /></p>
     <input type="hidden" name="nonce_create_meetings" value="'.wp_create_nonce('bbb_admin_panel_create_meetings').'" />
     </form>
@@ -1027,7 +1044,8 @@ const BBB_ADMINISTRATION_PANEL_TABLE_ROOMS_COLUMN_NAMES = [
     'Wait for Moderator',
     'Recorded',
     'VoiceBridge',
-    'Welcome Message'
+    'Welcome Message',
+    'Join Custom Parameters',
 ];
 
 function bbb_admin_panel_download_template_backup_file() {
@@ -1133,6 +1151,7 @@ function bbb_admin_panel_upload_rooms() {
                                         'recorded' => filter_var($data[5], FILTER_VALIDATE_BOOLEAN),
                                         'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
                                         'welcome' => htmlentities(stripslashes($data[7])),
+                                        'api_join_custom_parameters' => htmlentities(stripslashes($data[8])),
                                     ];
                                     if (!$existsRoom) {
                                         $inserted += $wpdb->insert( $table_name, $data);
@@ -1296,9 +1315,11 @@ function bbb_admin_panel_list_meetings() {
             		if( !isset($response['messageKey']) || $response['messageKey'] == '' ) {
             			// The meeting was just created, insert the create event to the log
             			$rows_affected = $wpdb->insert( $table_logs_name, array( 'meetingID' => $found->meetingID, 'recorded' => $found->recorded, 'timestamp' => time(), 'event' => 'Create' ) );
-            		}
+                    }
+                    
+                    $customParameters = explode('|', $found->api_join_custom_parameters);
 
-            		$bigbluebutton_joinURL = BigBlueButtonAPI::getJoinURL($found->meetingID, $current_user->display_name, $found->moderatorPW, $salt_val, $url_val );
+            		$bigbluebutton_joinURL = BigBlueButtonAPI::getJoinURL($found->meetingID, $current_user->display_name, $found->moderatorPW, $salt_val, $url_val, $customParameters);
             		$out .= '<script type="text/javascript">window.location = "'.$bigbluebutton_joinURL.'"; </script>'."\n";
             	}
 
@@ -1410,6 +1431,7 @@ function bbb_admin_panel_list_meetings() {
             <td>'.($meeting->recorded? 'Yes': 'No').'</td>
             <td>'.$meeting->voiceBridge.'</td>
             <td>'.htmlspecialchars_decode($meeting->welcome).'</td>
+            <td>'.htmlspecialchars_decode($meeting->api_join_custom_parameters).'</td>
             <td>
             <form name="form1" method="post" action="">
               <input type="hidden" name="nonce_delete_room" value="'.wp_create_nonce('bbb_admin_panel_list_meetings').'" />
@@ -1435,7 +1457,8 @@ function bbb_admin_panel_list_meetings() {
             <td>'.($meeting->waitForModerator? 'Yes': 'No').'</td>
             <td>'.($meeting->recorded? 'Yes': 'No').'</td>
             <td>'.$meeting->voiceBridge.'</td>
-            <td>'.htmlspecialchars_decode($meeting->welcome).'</td>';
+            <td>'.htmlspecialchars_decode($meeting->welcome).'</td>
+            <td>'.htmlspecialchars_decode($meeting->api_join_custom_parameters).'</td>';
             if( isset($info['hasBeenForciblyEnded']) && $info['hasBeenForciblyEnded']=='false') {
                 $out .= '
                 <td>
@@ -1508,6 +1531,7 @@ function bbb_admin_panel_print_table_header() {
           <th>Recorded</th>
           <th>VoiceBridge</th>
           <th>Welcome Message</th>
+          <th>Join Custom Parameters</th>
           <th>Actions</th>
         </tr>
       </thead>

@@ -34,7 +34,7 @@ function bbb_admin_panel_wrap_simplexml_load_file($url) {
 
 	// global $wp_version;
 	$args = array(
-	    'timeout'     => 180,
+	    'timeout'     => 30,
 	    // 'redirection' => 5,
 	    // 'httpversion' => '1.0',
 	    // 'user-agent'  => 'WordPress/' . $wp_version . '; ' . home_url(),
@@ -108,12 +108,16 @@ class BigBlueButtonAPI {
 	*@param PW -- the attendee or moderator password of the meeting
 	*@param SALT -- the security salt of the bigbluebutton server
 	*@param URL -- the url of the bigbluebutton server
-	*
+	*@param URL -- the url of the bigbluebutton server
+	*@param customParameters -- Array of custom parameters, in format ['a=1', 'b=2']
 	*@return The url to join the meeting
 	*/
-	public static function getJoinURL( $meetingID, $userName, $PW, $SALT, $URL ) {
+	public static function getJoinURL( $meetingID, $userName, $PW, $SALT, $URL, $customParameters = [] ) {
 		$url_join = $URL."api/join?";
-		$params = 'meetingID='.urlencode($meetingID).'&fullName='.urlencode($userName).'&password='.urlencode($PW);
+		$params = 'meetingID='.urlencode($meetingID)
+			.'&fullName='.urlencode($userName)
+			.'&password='.urlencode($PW)
+			.'&'.implode('&', $customParameters);
 		return ($url_join.$params.'&checksum='.sha1("join".$params.$SALT) );
 	}
 
@@ -183,13 +187,6 @@ class BigBlueButtonAPI {
 	public static function getMeetingInfoURL( $meetingID, $modPW, $URL, $SALT ) {
 		$base_url = $URL."api/getMeetingInfo?";
 		$params = 'meetingID='.urlencode($meetingID).'&password='.urlencode($modPW);
-		return ( $base_url.$params.'&checksum='.sha1("getMeetingInfo".$params.$SALT));
-	}
-
-	// Same as before but without the Moderator Password requirement.
-	public static function getMeetingInfoURLWithoutModeratorPwUrl( $meetingID, $URL, $SALT ) {
-		$base_url = $URL."api/getMeetingInfo?";
-		$params = 'meetingID='.urlencode($meetingID);
 		return ( $base_url.$params.'&checksum='.sha1("getMeetingInfo".$params.$SALT));
 	}
 
