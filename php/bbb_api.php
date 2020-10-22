@@ -109,15 +109,20 @@ class BigBlueButtonAPI {
 	*@param SALT -- the security salt of the bigbluebutton server
 	*@param URL -- the url of the bigbluebutton server
 	*@param URL -- the url of the bigbluebutton server
-	*@param customParameters -- Array of custom parameters, in format ['a=1', 'b=2']
+	*@param customParameters -- Array of custom parameters, in format ['a' => '1', 'b' => '2']
 	*@return The url to join the meeting
 	*/
 	public static function getJoinURL( $meetingID, $userName, $PW, $SALT, $URL, $customParameters = [] ) {
+		$meta = '';
+		foreach ($customParameters as $key => $value) {
+			$meta = $meta.'&'.$key.'='.urlencode($value);
+		}
+
 		$url_join = $URL."api/join?";
 		$params = 'meetingID='.urlencode($meetingID)
 			.'&fullName='.urlencode($userName)
 			.'&password='.urlencode($PW)
-			.'&'.implode('&', $customParameters);
+			.$meta;
 		return ($url_join.$params.'&checksum='.sha1("join".$params.$SALT) );
 	}
 

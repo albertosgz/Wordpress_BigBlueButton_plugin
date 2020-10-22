@@ -352,11 +352,11 @@ function bbb_admin_panel_active_meetings_shortcode($args) {
 }
 
 function bbb_admin_panel_room_status_shortcode($args) {
-    $token = $args['token'] ?? null;
-    $class = $args['class'] ?? null;
-    $active = $args['active'] ?? null;
-    $inactive = $args['inactive'] ?? null;
-    $period = $args['period'] ?? null; // in seconds
+    $token = $args['token'] ? $args['token'] : null;
+    $class = $args['class'] ? $args['class'] : null;
+    $active = $args['active'] ? $args['active'] : null;
+    $inactive = $args['inactive'] ? $args['inactive'] : null;
+    $period = $args['period'] ? $args['period'] : null; // in seconds
     return bbb_admin_panel_room_status($token, $class, $active, $inactive, $period);
 }
 
@@ -490,6 +490,11 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
             //Appending the voiceBridge key to the welcome message
             $welcome .= "<br><br>The voiceBridge of this Conference room is <b>".$voiceBridge."</b>.";
 
+            $customParameters = bbb_admin_panel_parse_custom_parameters($found->api_join_custom_parameters);
+            foreach($customParameters as $key => $customParam) {
+                $metadata[$key] = $customParam;
+            }
+
             //Call for creating meeting on the bigbluebutton server
             $response = BigBlueButtonAPI::createMeetingArray($name, $found->meetingID, $found->meetingName, $welcome, $found->moderatorPW, $found->attendeePW, $salt_val, $url_val, $logouturl, $recorded? 'true':'false', $duration, $voiceBridge, $metadata );
 
@@ -503,8 +508,6 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
                     // The meeting was just created, insert the create event to the log
                     $rows_affected = $wpdb->insert( $table_logs_name, array( 'meetingID' => $found->meetingID, 'recorded' => $found->recorded, 'timestamp' => time(), 'event' => 'Create' ) );
                 }
-
-                $customParameters = explode('|', $found->api_join_custom_parameters);
 
                 $bigbluebutton_joinURL = BigBlueButtonAPI::getJoinURL($found->meetingID, $name, $password, $salt_val, $url_val, $customParameters );
                 //If the meeting is already running or the moderator is trying to join or a viewer is trying to join and the
@@ -1287,7 +1290,9 @@ function bbb_admin_panel_list_meetings() {
                 } else {
             	    //Calls create meeting on the bigbluebutton server
             	    $welcome = BBB_ADMINISTRATION_PANEL_STRING_WELCOME;
-            	    if( $recorded ) $welcome .= BBB_ADMINISTRATION_PANEL_STRING_MEETING_RECORDED;
+                    if($found->recorded) {
+                        $welcome .= BBB_ADMINISTRATION_PANEL_STRING_MEETING_RECORDED;
+                    }
                 }
 
                 //Appending the voiceBridge key to the welcome message
@@ -1317,7 +1322,7 @@ function bbb_admin_panel_list_meetings() {
             			$rows_affected = $wpdb->insert( $table_logs_name, array( 'meetingID' => $found->meetingID, 'recorded' => $found->recorded, 'timestamp' => time(), 'event' => 'Create' ) );
                     }
                     
-                    $customParameters = explode('|', $found->api_join_custom_parameters);
+                    $customParameters = bbb_admin_panel_parse_custom_parameters($found->api_join_custom_parameters);
 
             		$bigbluebutton_joinURL = BigBlueButtonAPI::getJoinURL($found->meetingID, $current_user->display_name, $found->moderatorPW, $salt_val, $url_val, $customParameters);
             		$out .= '<script type="text/javascript">window.location = "'.$bigbluebutton_joinURL.'"; </script>'."\n";
@@ -2232,4 +2237,17 @@ function bbb_admin_panel_get_meeting($meetingId) {
     if (count($rows) > 0) {
         return $rows [0];
     }
+}
+
+function bbb_admin_panel_parse_custom_parameters($apiJoinCustomParameters) {
+    $metadata = [];
+    foreach(explode('|', $apiJoinCustomParameters) as $customParam) {
+        $pos = strpos($customParam, '=');
+        if ($pos) {
+            $key = substr($customParam, 0, $pos);
+            $param = substr($customParam, $pos+1);
+            $metadata[$key] = $param;
+        }
+    }
+    return $metadata;
 }
