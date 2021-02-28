@@ -194,6 +194,21 @@ class BigBlueButtonAPI {
 		$params = 'meetingID='.urlencode($meetingID).'&password='.urlencode($modPW);
 		return ( $base_url.$params.'&checksum='.sha1("getMeetingInfo".$params.$SALT));
 	}
+	
+	/**
+	*This method returns the url to getMeetingInfo of the specified meeting without providing moderator password.
+	*
+	*@param meetingID -- the unique meeting identifier used to store the meeting in the bigbluebutton server
+	*@param SALT -- the security salt of the bigbluebutton server
+	*@param URL -- the url of the bigbluebutton server
+	*
+	*@return The url to check if the specified meeting is running.
+	*/
+	public static function getMeetingInfoURLWithoutModeratorPwUrl( $meetingID, $URL, $SALT ) {
+		$base_url = $URL."api/getMeetingInfo?";
+		$params = 'meetingID='.urlencode($meetingID);
+		return ( $base_url.$params.'&checksum='.sha1("getMeetingInfo".$params.$SALT));
+	}
 
 	/**
 	*This method returns the url for listing all meetings in the bigbluebutton server.
