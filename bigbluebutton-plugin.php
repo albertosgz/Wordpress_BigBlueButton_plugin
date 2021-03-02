@@ -1730,22 +1730,26 @@ function bbb_admin_panel_list_active_meetings($tooltipParticipants) {
                             success: function(data) {
                                 if (data.returncode === "SUCCESS") {
                                     const at = [];
-                                    if (typeof data.attendees === "object") {
+                                    // antonp`s contribution
+                                    // Have to check against data.attendees.attendee if Object or Array
+                                    // typeof Array === "object" returns true so must use .constructor.name
+                                    if (data.attendees.attendee.constructor.name === "Object") { // Only one attendee presented
                                         at.push({
                                             name: data.attendees.attendee.fullName,
                                             role: data.attendees.attendee.role,
                                         });
-                                    } else {
-                                        data.attendees.forEach(attendee => {
+                                    } else { // data.attendees.attendee is an Array
+                                        data.attendees.attendee.forEach(attendee => {
                                             at.push({
-                                                name: attendee.fullName,
-                                                role: attendee.role,
+                                            name: attendee.fullName,
+                                            role: attendee.role,
                                             });
                                         });
                                     }
                                     alert( 
                                         "Participants (# - Name - Role): \n"+
-                                        at.map((a, i) => (i+1)+": "+a.name+" ("+a.role.toLowerCase()+")\n") 
+                                        // use join("\n") to avoid extra comma at the beginning of the line
+                                        at.map((a, i) => (i+1)+": "+a.name+" ("+a.role.toLowerCase()+")").join("\n") 
                                     );
                                 }
 
