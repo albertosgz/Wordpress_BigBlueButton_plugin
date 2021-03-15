@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.19
+Version: 1.1.20
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -105,9 +105,6 @@ function bbb_admin_panel_init() {
 }
 
 function bbb_admin_panel_init_sessions() {
-    if (!session_id()) {
-        session_start();
-    }
 }
 
 function bbb_admin_panel_init_scripts() {
@@ -522,9 +519,6 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
                 //If the viewer has the correct password, but the meeting has not yet started they have to wait
                 //for the moderator to start the meeting
                 else if ($found->attendeePW == $password) {
-                    //Stores the url and salt of the bigblubutton server in the session
-                    $_SESSION['mt_bbb_url'] = $url_val;
-                    $_SESSION['mt_salt'] = $salt_val;
                     //Displays the javascript to automatically redirect the user when the meeting begins
                     $out .= bbb_admin_panel_display_redirect_script($bigbluebutton_joinURL, $found->meetingID, $found->meetingName, $name);
                     return $out;
@@ -1910,9 +1904,6 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
 
     $url_val = get_option('bbb_admin_panel_url');
     $salt_val = get_option('bbb_admin_panel_salt');
-
-    $_SESSION['mt_bbb_url'] = $url_val;
-    $_SESSION['mt_salt'] = $salt_val;
 
     if (isset($token) and trim($token) == 'only-current-wp') {
         $tokens = '';

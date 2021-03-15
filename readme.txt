@@ -3,8 +3,8 @@ Contributors: albertosgz
 Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
-Tested up to: 5.5.1
-Stable tag: 1.1.19
+Tested up to: 5.7
+Stable tag: 1.1.20
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -95,6 +95,10 @@ You should enable the curl extension in php.ini.
 6. Recordings in a front end page.
 
 == Changelog ==
+
+= 1.1.20 =
+* [bugfix] Click on the row to list participants fixes. Thanks https://github.com/anton5rov!
+* Remove `session_start()` which was causing issues.
 
 = 1.1.19 =
 * Fix creation and join room with custom parameters
