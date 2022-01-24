@@ -3,7 +3,7 @@ Contributors: albertosgz
 Donate link: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Tags: bigbluebutton, opensource, open source, web, conferencing, webconferencing, multiconference
 Requires at least: 3.0.1
-Tested up to: 5.7
+Tested up to: 5.8.3
 Stable tag: 1.1.20
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -95,6 +95,12 @@ You should enable the curl extension in php.ini.
 6. Recordings in a front end page.
 
 == Changelog ==
+
+= 1.1.21 =
+* [bugfix] [Fixed wrong pagination when no rows to display](https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/28)
+* [bugfix] [Fixed missing endpoint, causing error redirecting: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin/issues/29)
+* Tested Up upgrading
+Thank you [Dan](https://github.com/danionescu2007) to point me out in the right direction in both issues. I really appreciate your help!
 
 = 1.1.20 =
 * [bugfix] Click on the row to list participants fixes. Thanks https://github.com/anton5rov!

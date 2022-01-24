@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.20
+Version: 1.1.21
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -638,6 +638,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
 //Displays the javascript that handles redirecting a user, when the meeting has started
 //the meetingName is the meetingID
 add_action( 'wp_ajax_nopriv_bbbadminpanel_action_display_redirect_script', 'bbbadminpanel_action_display_redirect_script' );
+add_action( 'wp_ajax_bbbadminpanel_action_display_redirect_script', 'bbbadminpanel_action_display_redirect_script' );
 
 function bbbadminpanel_action_display_redirect_script() {
 	global $wpdb; // this is how you get access to the database
@@ -1519,7 +1520,7 @@ function bbb_admin_panel_list_meetings() {
 function bbb_admin_panel_print_table_header() {
     return '
     <div>
-    <table id="bbb_print_table_header" class="display" cellspacing="0" width="100%">
+    <table id="bbb_print_table_header" class="stats" cellspacing="0" width="100%">
       <thead>
         <tr>
           <th>Meeting Room Name</th>
@@ -1628,7 +1629,7 @@ function bbb_admin_panel_list_active_meetings($tooltipParticipants) {
         $out .= '
         </tbody>
         <div>
-        <table id="activity_monitor" class="display" cellspacing="0" width="100%">
+        <table id="activity_monitor" class="stats" cellspacing="0" width="100%">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -1989,7 +1990,7 @@ function bbb_admin_panel_list_recordings($title=null,$args) {
   //Print begining of the table
     $out .= '
     <div id="bbb-recordings-div" class="bbb-recordings">
-    <table id="recording-list" class="display" width="100%" cellspacing="0">
+    <table id="recording-list" class="stats" width="100%" cellspacing="0">
       <thead>
       <tr>
         <th class="hed">Recording</td>
