@@ -3,7 +3,7 @@
 Plugin Name: BBB Administration Panel
 Plugin URI: https://github.com/albertosgz/Wordpress_BigBlueButton_plugin
 Description: Administraton panel to manage a Bigbluebutton server, its rooms and recordigns. Integrates login forms as widgets.
-Version: 1.1.21
+Version: 1.1.22
 Author: Alberto Sanchez Gonzalez
 Author URI: https://github.com/albertosgz
 License: GPLv2 or later
@@ -415,7 +415,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
         $dataSubmitted = true;
         $meetingExist = true;
 
-        $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_STRING);
+        $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $sql = "SELECT * FROM ".$table_name." WHERE meetingID = %s";
         $found = $wpdb->get_row(
@@ -425,13 +425,13 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
 
             if( !$current_user->ID ) {
                 if(isset($_POST['display_name']) && $_POST['display_name']) {
-                    $name = htmlspecialchars(filter_input(INPUT_POST, 'display_name', FILTER_SANITIZE_STRING));
+                    $name = htmlspecialchars(filter_input(INPUT_POST, 'display_name', FILTER_SANITIZE_SPECIAL_CHARS));
                 } else {
                     $name = $role;
                 }
 
                 if( bbb_admin_panel_validate_defaultRole($role, 'none') ) {
-                    $password = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_STRING);
+                    $password = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_SPECIAL_CHARS);
                 } else {
                     $password = $permissions[$role]['defaultRole'] == 'none'? $found->moderatorPW: $found->attendeePW;
                 }
@@ -448,7 +448,7 @@ function bbb_admin_panel_form($args, $bigbluebutton_form_in_widget = false) {
                     $name = $role;
                 }
                 if( bbb_admin_panel_validate_defaultRole($role, 'none') ) {
-                    $password = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_STRING);
+                    $password = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_SPECIAL_CHARS);
                 } else {
                     $password = $permissions[$role]['defaultRole'] == 'moderator'? $found->moderatorPW: $found->attendeePW;
                 }
@@ -770,9 +770,9 @@ function bbb_admin_panel_general_settings() {
             wp_verify_nonce( $_POST['nonce_settings'], 'bbb_admin_panel_general_settings' )) {
 
         //Reads their posted value
-        $url_val = filter_input(INPUT_POST, 'bbb_admin_panel_url', FILTER_SANITIZE_STRING);
-        $salt_val = filter_input(INPUT_POST, 'bbb_admin_panel_salt', FILTER_SANITIZE_STRING);
-        $newWidgetTitle = filter_input(INPUT_POST, 'bbb_admin_panel_widget_title', FILTER_SANITIZE_STRING);
+        $url_val = filter_input(INPUT_POST, 'bbb_admin_panel_url', FILTER_SANITIZE_SPECIAL_CHARS);
+        $salt_val = filter_input(INPUT_POST, 'bbb_admin_panel_salt', FILTER_SANITIZE_SPECIAL_CHARS);
+        $newWidgetTitle = filter_input(INPUT_POST, 'bbb_admin_panel_widget_title', FILTER_SANITIZE_SPECIAL_CHARS);
 
         //
         if(strripos($url_val, "/bigbluebutton/") == false) {
@@ -833,7 +833,7 @@ function bbb_admin_panel_permission_settings() {
     $out = '';
 
     if( isset($_POST['SubmitPermissions']) &&
-            filter_input(INPUT_POST, 'SubmitPermissions', FILTER_SANITIZE_STRING) == 'Save Permissions' &&
+            filter_input(INPUT_POST, 'SubmitPermissions', FILTER_SANITIZE_SPECIAL_CHARS) == 'Save Permissions' &&
             isset( $_POST['nonce_permissions']) &&
             wp_verify_nonce( $_POST['nonce_permissions'], 'bbb_admin_panel_permission_settings' )) {
 
@@ -847,7 +847,7 @@ function bbb_admin_panel_permission_settings() {
                     $permissions[$key]['defaultRole'] = 'attendee';
                 }
             } else {
-                $permissions[$key]['defaultRole'] = filter_input(INPUT_POST, $key.'-defaultRole', FILTER_SANITIZE_STRING);
+                $permissions[$key]['defaultRole'] = filter_input(INPUT_POST, $key.'-defaultRole', FILTER_SANITIZE_SPECIAL_CHARS);
             }
 
             if( !isset($_POST[$key.'-participate']) ) {
@@ -943,10 +943,10 @@ function bbb_admin_panel_create_meetings() {
             wp_verify_nonce( $_POST['nonce_create_meetings'], 'bbb_admin_panel_create_meetings' )) {
 
         /// Reads the posted values
-        $meetingName = filter_input(INPUT_POST, 'meetingName', FILTER_SANITIZE_STRING);
-        $attendeePW = filter_input(INPUT_POST, 'attendeePW', FILTER_SANITIZE_STRING)? : bbb_admin_panel_generatePassword(6, 2);
-        $moderatorPW = filter_input(INPUT_POST, 'moderatorPW', FILTER_SANITIZE_STRING)? : bbb_admin_panel_generatePassword(6, 2, $attendeePW);
-        $voiceBridge = filter_input(INPUT_POST, 'voiceBridge', FILTER_SANITIZE_STRING)? : 0;
+        $meetingName = filter_input(INPUT_POST, 'meetingName', FILTER_SANITIZE_SPECIAL_CHARS);
+        $attendeePW = filter_input(INPUT_POST, 'attendeePW', FILTER_SANITIZE_SPECIAL_CHARS)? : bbb_admin_panel_generatePassword(6, 2);
+        $moderatorPW = filter_input(INPUT_POST, 'moderatorPW', FILTER_SANITIZE_SPECIAL_CHARS)? : bbb_admin_panel_generatePassword(6, 2, $attendeePW);
+        $voiceBridge = filter_input(INPUT_POST, 'voiceBridge', FILTER_SANITIZE_SPECIAL_CHARS)? : 0;
         $waitForModerator = (isset($_POST[ 'waitForModerator' ]) && $_POST[ 'waitForModerator' ] == 'True')? true: false;
         $recorded = (isset($_POST[ 'recorded' ]) && $_POST[ 'recorded' ] == 'True')? true: false;
         $welcome = htmlentities(stripslashes($_POST['welcome']));
@@ -1137,17 +1137,17 @@ function bbb_admin_panel_upload_rooms() {
 
                                 $existsRoom = in_array($data[1], $listOfMeetings);
 
-                                $meetingId = filter_var($data[1], FILTER_SANITIZE_STRING);
+                                $meetingId = filter_var($data[1], FILTER_SANITIZE_SPECIAL_CHARS);
                                 if ($meetingId) {
                                     $data = [
                                         'meetingID' => $meetingId,
-                                        'meetingName' => filter_var($data[0], FILTER_SANITIZE_STRING),
+                                        'meetingName' => filter_var($data[0], FILTER_SANITIZE_SPECIAL_CHARS),
                                         'meetingVersion' => time(),
-                                        'attendeePW' => filter_var($data[2], FILTER_SANITIZE_STRING),
-                                        'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_STRING),
+                                        'attendeePW' => filter_var($data[2], FILTER_SANITIZE_SPECIAL_CHARS),
+                                        'moderatorPW' => filter_var($data[3], FILTER_SANITIZE_SPECIAL_CHARS),
                                         'waitForModerator' => filter_var($data[4], FILTER_VALIDATE_BOOLEAN),
                                         'recorded' => filter_var($data[5], FILTER_VALIDATE_BOOLEAN),
-                                        'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_STRING),
+                                        'voiceBridge' => filter_var($data[6], FILTER_SANITIZE_SPECIAL_CHARS),
                                         'welcome' => htmlentities(stripslashes($data[7])),
                                         'api_join_custom_parameters' => htmlentities(stripslashes($data[8])),
                                     ];
@@ -1256,7 +1256,7 @@ function bbb_admin_panel_list_meetings() {
         wp_verify_nonce( $_POST['nonce_delete_room'], 'bbb_admin_panel_list_meetings' )) { //Creates then joins the meeting. If any problems occur the error is displayed
 
         // Read the posted value and delete
-        $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_STRING);
+        $meetingID = filter_input(INPUT_POST, 'meetingID', FILTER_SANITIZE_SPECIAL_CHARS);
         $sql = "SELECT * FROM ".$table_name." WHERE meetingID = %s";
         $found = $wpdb->get_row(
                 $wpdb->prepare($sql, $meetingID)
@@ -1603,7 +1603,7 @@ function bbb_admin_panel_list_active_meetings($tooltipParticipants) {
     $salt_val = get_option('bbb_admin_panel_salt');
 
     $info = BigBlueButtonAPI::getMeetings( $url_val, $salt_val);
-    $meetings = simplexml_load_string ($info);
+    $meetings = simplexml_load_string ($info ?? '');
 
     if(!$info)
     {
@@ -1877,7 +1877,7 @@ function bbbadminpanel_action_post_manage_recordings() {
 	wp_die(); // this is required to terminate immediately and return a proper response
 }
 
-function bbb_admin_panel_list_recordings($title=null,$args) {
+function bbb_admin_panel_list_recordings($title,$args) {
     global $wpdb, $wp_roles, $current_user;
     $table_name = bbb_admin_panel_get_db_table_name();
     $table_logs_name = bbb_admin_panel_get_db_table_name_logs();

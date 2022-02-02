@@ -248,7 +248,7 @@ class BigBlueButtonAPI {
 		$params = '';
 		if (empty($params))
 		{
-			$params .= "meetingID=".urlencode($meetingID)."&";
+			$params .= "meetingID=".urlencode($meetingID ?? '')."&";
 		}
 	    $params .= "state=processing,processed,published,unpublished";
 
